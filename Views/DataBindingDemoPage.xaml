@@ -1,0 +1,204 @@
+<Page
+    x:Class="UWPDemo.Views.DataBindingDemoPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWPDemo.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Navigation Header -->
+        <Grid Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Grid.Column="0" Click="NavigateBack" VerticalAlignment="Center" Margin="0,0,16,0">
+                <SymbolIcon Symbol="Back"/>
+            </Button>
+            <TextBlock Grid.Column="1" Text="Data Binding Demo" 
+                      Style="{StaticResource PageTitleTextBlockStyle}" 
+                      VerticalAlignment="Center" Margin="0"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+            <StackPanel Margin="24" Spacing="32">
+
+                <!-- Person Data Entry -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Person Information (Two-Way Binding)" Style="{StaticResource SectionHeaderTextBlockStyle}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,16,16">
+                            <TextBlock Text="First Name:" Margin="0,0,0,4"/>
+                            <TextBox Text="{x:Bind ViewModel.Person.FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="0" Margin="16,0,0,16">
+                            <TextBlock Text="Last Name:" Margin="0,0,0,4"/>
+                            <TextBox Text="{x:Bind ViewModel.Person.LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,16,16">
+                            <TextBlock Text="Age:" Margin="0,0,0,4"/>
+                            <NumberBox Value="{x:Bind ViewModel.Person.Age, Mode=TwoWay}" Minimum="0" Maximum="150"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="1" Margin="16,0,0,16">
+                            <TextBlock Text="Email:" Margin="0,0,0,4"/>
+                            <TextBox Text="{x:Bind ViewModel.Person.Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2">
+                            <TextBlock Text="Bio:" Margin="0,0,0,4"/>
+                            <TextBox Text="{x:Bind ViewModel.Person.Bio, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                    AcceptsReturn="True" 
+                                    TextWrapping="Wrap" 
+                                    Height="80"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Live Preview -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Live Preview (One-Way Binding)" Style="{StaticResource SectionHeaderTextBlockStyle}"/>
+                    
+                    <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                           Padding="16" CornerRadius="8">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Full Name:" FontWeight="SemiBold"/>
+                            <TextBlock Text="{x:Bind ViewModel.Person.FullName, Mode=OneWay}" 
+                                      FontSize="18" 
+                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                            
+                            <TextBlock Text="Age:" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                            <TextBlock Text="{x:Bind ViewModel.Person.AgeDescription, Mode=OneWay}"/>
+                            
+                            <TextBlock Text="Email:" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                            <TextBlock Text="{x:Bind ViewModel.Person.Email, Mode=OneWay}"/>
+                            
+                            <TextBlock Text="Bio:" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                            <TextBlock Text="{x:Bind ViewModel.Person.Bio, Mode=OneWay}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Collection Binding -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Collection Binding (ObservableCollection)" Style="{StaticResource SectionHeaderTextBlockStyle}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+                                <TextBox x:Name="NewItemTextBox" PlaceholderText="Enter new item..." Width="200"/>
+                                <Button Content="Add" Click="AddItemButton_Click"/>
+                            </StackPanel>
+                            
+                            <ListView ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}" 
+                                     SelectedItem="{x:Bind ViewModel.SelectedItem, Mode=TwoWay}"
+                                     Height="200"
+                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                     BorderThickness="1">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{x:Bind}" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="1" 
+                                                   Content="Delete" 
+                                                   FontSize="12"
+                                                   Padding="8,4"
+                                                   Click="DeleteItem"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                            <TextBlock Text="Selected Item Details:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                   Padding="16" CornerRadius="8" Height="200">
+                                <StackPanel>
+                                    <TextBlock Text="Selected:" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" 
+                                              FontWeight="SemiBold"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    
+                                    <TextBlock Text="Total Items:" Margin="0,16,0,4"/>
+                                    <TextBlock Text="{x:Bind ViewModel.ItemCount, Mode=OneWay}"/>
+                                    
+                                    <Button Content="Clear All" 
+                                           Margin="0,16,0,0"
+                                           Click="{x:Bind ViewModel.ClearItems}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Value Converters Demo -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Value Converters" Style="{StaticResource SectionHeaderTextBlockStyle}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <TextBlock Text="Boolean to Visibility:" Margin="0,0,0,8"/>
+                            <CheckBox Content="Show additional info" IsChecked="{x:Bind ViewModel.ShowAdditionalInfo, Mode=TwoWay}"/>
+                            <Border Background="{ThemeResource AccentFillColorDefaultBrush}" 
+                                   Padding="12" 
+                                   CornerRadius="4" 
+                                   Margin="0,8,0,0"
+                                   Visibility="{x:Bind ViewModel.ShowAdditionalInfo, Mode=OneWay}">
+                                <TextBlock Text="This content is conditionally visible!" 
+                                          Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                            <TextBlock Text="Number Formatting:" Margin="0,0,0,8"/>
+                            <Slider Value="{x:Bind ViewModel.NumericValue, Mode=TwoWay}" 
+                                   Minimum="0" Maximum="1000" 
+                                   Header="Raw Value"/>
+                            <TextBlock Text="{x:Bind ViewModel.FormattedValue, Mode=OneWay}" 
+                                      Margin="0,8,0,0"
+                                      FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
