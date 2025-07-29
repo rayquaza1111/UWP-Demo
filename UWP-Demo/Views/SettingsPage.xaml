@@ -1,0 +1,123 @@
+<Page
+    x:Class="UWP_Demo.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_Demo.Views"
+    xmlns:viewmodels="using:UWP_Demo.ViewModels"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.DataContext>
+        <viewmodels:SettingsViewModel />
+    </Page.DataContext>
+
+    <ScrollViewer Margin="{StaticResource LargePadding}">
+        <StackPanel Spacing="24" MaxWidth="600">
+            
+            <!-- Header -->
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource HeaderTextStyle}" />
+                <TextBlock Text="Configure application preferences and settings" Style="{StaticResource CaptionTextStyle}" />
+            </StackPanel>
+
+            <!-- Theme Settings -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Appearance" Style="{StaticResource SubtitleTextStyle}" />
+                    
+                    <StackPanel>
+                        <TextBlock Text="Theme" Style="{StaticResource BodyTextStyle}" />
+                        <ComboBox ItemsSource="{Binding AvailableThemes}" 
+                                  SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                  DisplayMemberPath="Name"
+                                  SelectedValuePath="Theme"
+                                  HorizontalAlignment="Left"
+                                  MinWidth="200" />
+                    </StackPanel>
+
+                    <Button Content="Toggle Theme" Command="{Binding ToggleThemeCommand}" 
+                            Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!-- Application Settings -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Application" Style="{StaticResource SubtitleTextStyle}" />
+                    
+                    <ToggleSwitch Header="Enable notifications" 
+                                  IsOn="{Binding NotificationsEnabled, Mode=TwoWay}" />
+                    
+                    <ToggleSwitch Header="Auto-save data" 
+                                  IsOn="{Binding AutoSaveEnabled, Mode=TwoWay}" />
+                    
+                    <StackPanel>
+                        <TextBlock Text="Auto-save interval (minutes)" Style="{StaticResource BodyTextStyle}" />
+                        <Slider Value="{Binding AutoSaveInterval, Mode=TwoWay}"
+                                Minimum="1" Maximum="60" StepFrequency="1"
+                                IsEnabled="{Binding IsAutoSaveIntervalEnabled}"
+                                Width="200" HorizontalAlignment="Left" />
+                        <TextBlock Text="{Binding AutoSaveInterval}" Style="{StaticResource CaptionTextStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- System Information -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="System Information" Style="{StaticResource SubtitleTextStyle}" />
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Style="{StaticResource BodyTextStyle}">
+                            <Run Text="App Version:" FontWeight="SemiBold" />
+                            <Run Text="{Binding AppVersion}" />
+                        </TextBlock>
+                        
+                        <TextBlock Style="{StaticResource BodyTextStyle}">
+                            <Run Text="Network Status:" FontWeight="SemiBold" />
+                            <Run Text="{Binding NetworkStatus}" />
+                        </TextBlock>
+                        
+                        <TextBlock Style="{StaticResource BodyTextStyle}">
+                            <Run Text="Storage:" FontWeight="SemiBold" />
+                            <Run Text="{Binding StorageInfo}" />
+                        </TextBlock>
+                        
+                        <TextBlock Text="{Binding LastBackupInfo}" Style="{StaticResource CaptionTextStyle}" />
+                    </StackPanel>
+
+                    <Button Content="Refresh Status" Command="{Binding RefreshNetworkStatusCommand}" 
+                            Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!-- Actions -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Data Management" Style="{StaticResource SubtitleTextStyle}" />
+                    
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" 
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Content="Reset to Defaults" Command="{Binding ResetSettingsCommand}" 
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Content="Clear All Data" Command="{Binding ClearDataCommand}" 
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Loading Indicators -->
+            <StackPanel Orientation="Horizontal" Spacing="16" 
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ProgressRing IsActive="True" Width="20" Height="20" />
+                <TextBlock Text="Processing..." Style="{StaticResource BodyTextStyle}" VerticalAlignment="Center" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+    <!-- Error Notification -->
+    <muxc:InfoBar IsOpen="{Binding HasError}" Severity="Error" Title="Error" Message="{Binding ErrorMessage}" 
+                 VerticalAlignment="Top" Margin="16" />
+</Page>

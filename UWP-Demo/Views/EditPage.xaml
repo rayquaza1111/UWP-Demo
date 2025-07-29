@@ -1,0 +1,85 @@
+<Page
+    x:Class="UWP_Demo.Views.EditPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_Demo.Views"
+    xmlns:viewmodels="using:UWP_Demo.ViewModels"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.DataContext>
+        <viewmodels:EditViewModel />
+    </Page.DataContext>
+
+    <Grid Margin="{StaticResource LargePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="{StaticResource MediumMargin}">
+            <TextBlock Text="{Binding PageTitle}" Style="{StaticResource HeaderTextStyle}" />
+            <TextBlock Text="{Binding PageSubtitle}" Style="{StaticResource CaptionTextStyle}" />
+        </StackPanel>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="16" MaxWidth="400" HorizontalAlignment="Left">
+                
+                <!-- First Name -->
+                <StackPanel>
+                    <TextBlock Text="First Name *" Style="{StaticResource BodyTextStyle}" />
+                    <TextBox Text="{Binding EditingCustomer.FirstName, Mode=TwoWay}" 
+                             Style="{StaticResource FormTextBoxStyle}" />
+                    <TextBlock Text="{Binding FirstNameError}" Style="{StaticResource ErrorTextStyle}" />
+                </StackPanel>
+
+                <!-- Last Name -->
+                <StackPanel>
+                    <TextBlock Text="Last Name *" Style="{StaticResource BodyTextStyle}" />
+                    <TextBox Text="{Binding EditingCustomer.LastName, Mode=TwoWay}" 
+                             Style="{StaticResource FormTextBoxStyle}" />
+                    <TextBlock Text="{Binding LastNameError}" Style="{StaticResource ErrorTextStyle}" />
+                </StackPanel>
+
+                <!-- Email -->
+                <StackPanel>
+                    <TextBlock Text="Email *" Style="{StaticResource BodyTextStyle}" />
+                    <TextBox Text="{Binding EditingCustomer.Email, Mode=TwoWay}" 
+                             Style="{StaticResource FormTextBoxStyle}" />
+                    <TextBlock Text="{Binding EmailError}" Style="{StaticResource ErrorTextStyle}" />
+                </StackPanel>
+
+                <!-- Phone -->
+                <StackPanel>
+                    <TextBlock Text="Phone" Style="{StaticResource BodyTextStyle}" />
+                    <TextBox Text="{Binding EditingCustomer.Phone, Mode=TwoWay}" 
+                             Style="{StaticResource FormTextBoxStyle}" />
+                    <TextBlock Text="{Binding PhoneError}" Style="{StaticResource ErrorTextStyle}" />
+                </StackPanel>
+
+                <!-- Company -->
+                <StackPanel>
+                    <TextBlock Text="Company" Style="{StaticResource BodyTextStyle}" />
+                    <TextBox Text="{Binding EditingCustomer.Company, Mode=TwoWay}" 
+                             Style="{StaticResource FormTextBoxStyle}" />
+                </StackPanel>
+
+                <!-- Success Message -->
+                <TextBlock Text="{Binding SuccessMessage}" Style="{StaticResource SuccessTextStyle}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="{StaticResource MediumMargin}">
+            <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+            <Button Content="{Binding SaveButtonText}" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}" />
+        </StackPanel>
+
+        <!-- Error Notification -->
+        <muxc:InfoBar IsOpen="{Binding HasError}" Severity="Error" Title="Error" Message="{Binding ErrorMessage}" 
+                     Grid.Row="0" Grid.RowSpan="3" VerticalAlignment="Top" />
+    </Grid>
+</Page>
