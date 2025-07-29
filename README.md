@@ -70,7 +70,23 @@ Complete settings implementation:
    - Go to Settings → Update & Security → For developers
    - Select "Developer mode"
 
+> **Note**: This UWP application can only be built and run on Windows systems with the appropriate development tools installed. Linux and macOS environments are not supported for UWP development.
+
 ## 🚀 Getting Started
+
+### Project Validation
+
+Before building, you can verify that all project files are present:
+
+**Windows Command Prompt:**
+```cmd
+validate-project.bat
+```
+
+**PowerShell (Cross-platform):**
+```powershell
+.\validate-project.ps1
+```
 
 ### Clone and Build
 
