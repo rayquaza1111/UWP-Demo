@@ -1,0 +1,195 @@
+<Page
+    x:Class="UWP_Demo.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_Demo"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <!--
+    MainPage serves as the application shell using NavigationView from WinUI 2.
+    This page demonstrates:
+    - Modern navigation patterns with NavigationView
+    - Multi-page application structure
+    - Responsive design that adapts to different screen sizes
+    - Theme-aware UI elements
+    - Integration with MVVM pattern
+    - Proper handling of navigation events
+    -->
+
+    <Grid>
+        <!--
+        NavigationView provides the main navigation structure for the application.
+        It includes:
+        - Navigation menu with Home, Edit, and Settings pages
+        - Header area for page titles
+        - Content frame for page content
+        - Responsive behavior (hamburger menu on small screens)
+        - Support for keyboard and accessibility navigation
+        -->
+        <muxc:NavigationView x:Name="MainNavigationView"
+                            IsBackButtonVisible="Auto"
+                            IsSettingsVisible="True"
+                            SelectionChanged="NavigationView_SelectionChanged"
+                            BackRequested="NavigationView_BackRequested"
+                            PaneDisplayMode="Auto"
+                            OpenPaneLength="280"
+                            CompactPaneLength="48">
+
+            <!--
+            Navigation menu items defined in XAML.
+            Each item represents a page in the application and includes:
+            - Icon for visual identification
+            - Content text for the menu label
+            - Tag property for programmatic identification
+            -->
+            <muxc:NavigationView.MenuItems>
+                <!-- Home page - Main dashboard with customer list -->
+                <muxc:NavigationViewItem Icon="Home" Content="Home" Tag="home">
+                    <muxc:NavigationViewItem.InfoBadge>
+                        <!-- Badge could show customer count or notifications -->
+                        <muxc:InfoBadge x:Name="HomeBadge" Visibility="Collapsed" />
+                    </muxc:NavigationViewItem.InfoBadge>
+                </muxc:NavigationViewItem>
+
+                <!-- Edit page - Customer management and editing -->
+                <muxc:NavigationViewItem Icon="Edit" Content="Edit Customer" Tag="edit">
+                    <muxc:NavigationViewItem.InfoBadge>
+                        <!-- Badge could indicate unsaved changes -->
+                        <muxc:InfoBadge x:Name="EditBadge" Visibility="Collapsed" />
+                    </muxc:NavigationViewItem.InfoBadge>
+                </muxc:NavigationViewItem>
+
+                <!-- Separator for visual grouping -->
+                <muxc:NavigationViewItemSeparator />
+
+                <!-- Network Demo - Shows API integration features -->
+                <muxc:NavigationViewItem Tag="network">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE774;" /> <!-- Cloud icon -->
+                    </muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Content>
+                        <TextBlock Text="Network Demo" />
+                    </muxc:NavigationViewItem.Content>
+                </muxc:NavigationViewItem>
+            </muxc:NavigationView.MenuItems>
+
+            <!--
+            Footer menu items for secondary actions.
+            These appear at the bottom of the navigation pane.
+            -->
+            <muxc:NavigationView.FooterMenuItems>
+                <!-- About/Info page -->
+                <muxc:NavigationViewItem Icon="Help" Content="About" Tag="about" />
+            </muxc:NavigationView.FooterMenuItems>
+
+            <!--
+            Header content area that appears above the page content.
+            This can display page titles, breadcrumbs, or page-specific actions.
+            -->
+            <muxc:NavigationView.Header>
+                <Grid Height="48" Margin="12,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Page title and subtitle -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock x:Name="PageTitleTextBlock" 
+                                  Text="UWP Demo Application"
+                                  Style="{StaticResource HeaderTextStyle}"
+                                  Margin="0" />
+                        <TextBlock x:Name="PageSubtitleTextBlock"
+                                  Text="Modern Windows development showcase"
+                                  Style="{StaticResource CaptionTextStyle}"
+                                  Margin="0,-4,0,0"
+                                  Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <!-- Header actions area -->
+                    <StackPanel Grid.Column="1" 
+                               Orientation="Horizontal" 
+                               VerticalAlignment="Center"
+                               Spacing="8">
+                        
+                        <!-- Theme toggle button -->
+                        <Button x:Name="ThemeToggleButton"
+                               Content="🌙"
+                               ToolTipService.ToolTip="Toggle between Light and Dark theme"
+                               Click="ThemeToggleButton_Click"
+                               Style="{StaticResource SecondaryButtonStyle}"
+                               Width="40"
+                               Height="32"
+                               Padding="0" />
+
+                        <!-- Network status indicator -->
+                        <Border x:Name="NetworkStatusBorder"
+                               Background="{StaticResource SuccessBrush}"
+                               CornerRadius="8"
+                               Padding="8,4"
+                               Margin="4,0">
+                            <TextBlock x:Name="NetworkStatusText"
+                                      Text="Online"
+                                      Foreground="White"
+                                      FontSize="12"
+                                      FontWeight="Medium" />
+                        </Border>
+
+                        <!-- Loading indicator for app-wide operations -->
+                        <ProgressRing x:Name="HeaderProgressRing"
+                                     Width="20"
+                                     Height="20"
+                                     IsActive="False"
+                                     Visibility="Collapsed" />
+                    </StackPanel>
+                </Grid>
+            </muxc:NavigationView.Header>
+
+            <!--
+            Content frame where individual pages are displayed.
+            This frame hosts the actual page content and handles navigation between pages.
+            -->
+            <Frame x:Name="ContentFrame" 
+                   Margin="0"
+                   NavigationFailed="ContentFrame_NavigationFailed" />
+
+        </muxc:NavigationView>
+
+        <!--
+        Global error notification area.
+        This InfoBar appears when there are application-wide errors or important messages.
+        It's positioned above the navigation view to ensure visibility.
+        -->
+        <muxc:InfoBar x:Name="GlobalInfoBar"
+                     IsOpen="False"
+                     Severity="Informational"
+                     Title="Information"
+                     Message=""
+                     IsClosable="True"
+                     VerticalAlignment="Top"
+                     Margin="0,0,0,0"
+                     IsIconVisible="True" />
+
+        <!--
+        Loading overlay for app-wide loading states.
+        This appears during initialization or major data operations.
+        -->
+        <Border x:Name="LoadingOverlay"
+               Background="{ThemeResource LayerFillColorDefaultBrush}"
+               Visibility="Collapsed"
+               Opacity="0.9">
+            <StackPanel HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Spacing="16">
+                <ProgressRing IsActive="True"
+                             Width="48"
+                             Height="48" />
+                <TextBlock x:Name="LoadingText"
+                          Text="Loading..."
+                          Style="{StaticResource SubtitleTextStyle}"
+                          HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>
