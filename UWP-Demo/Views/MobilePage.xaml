@@ -1,0 +1,71 @@
+<Page
+    x:Class="UWP_Demo.Views.MobilePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
+            
+            <!-- Mobile: Modern header -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            CornerRadius="6"
+                            Width="40"
+                            Height="40">
+                        <SymbolIcon Symbol="CellPhone" 
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Mobile Synchronization" 
+                                   FontSize="28" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Sync customer data with mobile devices" 
+                                   FontSize="14" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Coming Soon InfoBar -->
+            <muxc:InfoBar Title="Feature Coming Soon"
+                          Message="Mobile synchronization features are being developed. This will include cloud sync, offline access, and mobile app integration."
+                          Severity="Informational"
+                          IsOpen="True"
+                          IsClosable="False">
+                <muxc:InfoBar.IconSource>
+                    <muxc:SymbolIconSource Symbol="CellPhone" />
+                </muxc:InfoBar.IconSource>
+            </muxc:InfoBar>
+
+            <!-- Placeholder content -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Future Mobile Features:" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Cloud Synchronization" FontSize="14" />
+                        <TextBlock Text="Offline Access" FontSize="14" />
+                        <TextBlock Text="Mobile App Integration" FontSize="14" />
+                        <TextBlock Text="Real-time Updates" FontSize="14" />
+                        <TextBlock Text="Cross-device Sync" FontSize="14" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -15,18 +15,12 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="UWP_Demo.App">
-      <uap:VisualElements DisplayName="UWP Demo" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="A comprehensive UWP demo application showcasing modern Windows development features including customer management, theme settings, file I/O, and network capabilities." BackgroundColor="transparent">
+      <uap:VisualElements DisplayName="UWP Demo" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="UWP Demo Customer Management App" BackgroundColor="#0078D4">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>
-    <!-- Internet Client capability for network requests to JSONPlaceholder API -->
     <Capability Name="internetClient" />
-    <!-- Documents Library capability for customer data file operations -->
-    <uap:Capability Name="documentsLibrary" />
-    <!-- Removable Storage capability for additional file access -->
-    <uap:Capability Name="removableStorage" />
   </Capabilities>
 </Package>

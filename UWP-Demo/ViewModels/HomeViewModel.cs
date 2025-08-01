@@ -1,908 +1,656 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using UWP_Demo.Commands;
 using UWP_Demo.Models;
 using UWP_Demo.Services;
-using UWP_Demo.Helpers;
+using UWP_Demo.Views;  // ?? STATE MANAGEMENT: Import Views namespace for HomePage
 
 namespace UWP_Demo.ViewModels
 {
     /// <summary>
-    /// ViewModel for the Home page that manages customer list display and basic operations.
-    /// This ViewModel demonstrates MVVM patterns for data binding, command handling, and
-    /// integration with application services for customer management.
-    /// </summary>
-    /// <remarks>
-    /// This ViewModel showcases several important MVVM and UWP concepts:
-    /// - ObservableCollection for dynamic list binding
-    /// - ICommand implementation for user actions
-    /// - Async operations with proper UI feedback
-    /// - Service integration for data and network operations
-    /// - Search and filtering functionality
-    /// - Selection management and state preservation
-    /// - Error handling with user-friendly messages
-    /// - Loading states and progress indication
+    /// FILE I/O: Home page view model that orchestrates file-based customer management
+    /// Acts as intermediary between UI and CustomerService file operations
     /// 
-    /// The HomeViewModel serves as the data context for the Home page and coordinates
-    /// all customer list operations including viewing, searching, selecting, and
-    /// initiating edit or delete operations.
-    /// </remarks>
-    public class HomeViewModel : BaseViewModel
+    /// FILE I/O RESPONSIBILITIES:
+    /// 1. Trigger initial file load when app starts
+    /// 2. Handle user actions that require file saves (Add, Delete)
+    /// 3. Provide file operation status feedback to UI
+    /// 4. Manage file operation error handling and user notifications
+    /// </summary>
+    public class HomeViewModel : INotifyPropertyChanged
     {
-        #region Private Fields
+        // FILE I/O: Service that handles all file operations
+        private readonly CustomerService _customerService;
+        private readonly DialogService _dialogService;
 
-        /// <summary>
-        /// Reference to the data service for customer operations.
-        /// </summary>
-        private readonly DataService _dataService;
-
-        /// <summary>
-        /// Reference to the network service for API operations.
-        /// </summary>
-        private readonly NetworkService _networkService;
-
-        /// <summary>
-        /// Reference to the settings service for state persistence.
-        /// </summary>
-        private readonly SettingsService _settingsService;
-
-        /// <summary>
-        /// The currently selected customer in the list.
-        /// </summary>
-        private Customer _selectedCustomer;
-
-        /// <summary>
-        /// The current search/filter text.
-        /// </summary>
-        private string _searchText;
-
-        /// <summary>
-        /// Filtered collection of customers based on search criteria.
-        /// </summary>
+        private ObservableCollection<Customer> _customers;
         private ObservableCollection<Customer> _filteredCustomers;
+        private Customer _selectedCustomer;
+        private string _searchText = "";
+        
+        // FILE I/O: Status property to show current file operation to user
+        private string _fileStatus = "Loading...";  // FILE I/O: Tracks and displays file operation status
+        
+        // SUSPENSION & RESUME: Welcome message for users returning to the app
+        private string _welcomeMessage = "";
 
-        /// <summary>
-        /// Flag indicating whether a refresh operation is in progress.
-        /// </summary>
-        private bool _isRefreshing;
-
-        /// <summary>
-        /// Flag indicating whether external data is being loaded.
-        /// </summary>
-        private bool _isLoadingExternalData;
-
-        /// <summary>
-        /// Summary text showing customer statistics.
-        /// </summary>
-        private string _customerSummary;
-
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Gets the collection of customers from the data service.
-        /// This is bound directly to the data service's observable collection.
-        /// </summary>
-        /// <remarks>
-        /// Binding directly to the service's collection ensures that any changes
-        /// made through other parts of the application (like the Edit page) are
-        /// automatically reflected in the Home page UI.
-        /// </remarks>
-        public ObservableCollection<Customer> Customers => _dataService.Customers;
-
-        /// <summary>
-        /// Gets or sets the filtered collection of customers based on search criteria.
-        /// This collection is displayed in the UI when search is active.
-        /// </summary>
-        /// <remarks>
-        /// When no search is active, this collection mirrors the main Customers collection.
-        /// When search is active, it contains only customers matching the search criteria.
-        /// </remarks>
-        public ObservableCollection<Customer> FilteredCustomers
+        public HomeViewModel()
         {
-            get => _filteredCustomers;
-            set => SetProperty(ref _filteredCustomers, value);
+            System.Diagnostics.Debug.WriteLine("FILE I/O: HomeViewModel constructor - initializing file-based customer management");
+            
+            // FILE I/O: Initialize service that handles file persistence
+            _customerService = new CustomerService();
+            _dialogService = new DialogService();
+
+            Customers = new ObservableCollection<Customer>();
+            FilteredCustomers = new ObservableCollection<Customer>();
+
+            InitializeCommands();
+            
+            // SUSPENSION & RESUME: Initialize welcome message based on app state
+            InitializeWelcomeMessage();
+            
+            // FILE I/O: Start the file loading process immediately when ViewModel is created
+            LoadCustomersAsync();  // FILE I/O: This triggers the initial file load
+            
+            System.Diagnostics.Debug.WriteLine("FILE I/O: HomeViewModel constructor completed, file loading initiated");
+        }
+
+        public string Title => "Customer Management";
+
+        public string CustomerSummary
+        {
+            get
+            {
+                if (Customers == null || Customers.Count == 0)
+                    return "No customers yet";
+                
+                return Customers.Count == 1 ? "1 customer in database" : $"{Customers.Count} customers in database";
+            }
         }
 
         /// <summary>
-        /// Gets or sets the currently selected customer.
-        /// This property is bound to the ListView.SelectedItem property.
+        /// SUSPENSION & RESUME: Welcome message property for displaying app state information
+        /// Shows welcome back messages, time away, and suspension state details
         /// </summary>
-        /// <remarks>
-        /// When a customer is selected, the selection is persisted to settings
-        /// so it can be restored when navigating back to this page or when
-        /// the app is resumed from suspension.
-        /// </remarks>
+        public string WelcomeMessage
+        {
+            get => _welcomeMessage;
+            set
+            {
+                _welcomeMessage = value;
+                OnPropertyChanged();
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message updated: {value}");
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Whether to show the welcome message
+        /// </summary>
+        public bool ShowWelcomeMessage => !string.IsNullOrEmpty(WelcomeMessage);
+
+        /// <summary>
+        /// WINUI 2 UI ENHANCEMENT: Enhanced file status for InfoBar display
+        /// Replaces basic text status with rich InfoBar messaging
+        /// Shows different severity levels and actionable messages
+        /// Automatically updates InfoBar appearance based on operation status
+        /// </summary>
+        public string FileStatus
+        {
+            get => _fileStatus;
+            set
+            {
+                _fileStatus = value;
+                OnPropertyChanged();  // FILE I/O: Notify UI to update InfoBar
+
+                // WINUI 2 UI ENHANCEMENT: Update InfoBar severity based on message content
+                // This provides automatic color coding and iconography for different states
+                UpdateInfoBarSeverity(value);
+                
+                System.Diagnostics.Debug.WriteLine($"WINUI 2 UI ENHANCEMENT: InfoBar status updated: {value}");
+            }
+        }
+
+        /// <summary>
+        /// WINUI 2 UI ENHANCEMENT: InfoBar severity property for different message types
+        /// Controls the visual appearance of the InfoBar (color, icon, style)
+        /// Provides semantic meaning to status messages through visual indicators
+        /// Values: Informational (blue), Success (green), Warning (yellow), Error (red)
+        /// </summary>
+        private Microsoft.UI.Xaml.Controls.InfoBarSeverity _infoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+        public Microsoft.UI.Xaml.Controls.InfoBarSeverity InfoBarSeverity
+        {
+            get => _infoBarSeverity;
+            set
+            {
+                _infoBarSeverity = value;
+                OnPropertyChanged();  // WINUI 2: Notify InfoBar to update visual appearance
+            }
+        }
+
+        /// <summary>
+        /// WINUI 2 UI ENHANCEMENT: Update InfoBar severity based on file operation status
+        /// Automatically determines appropriate visual indicator based on message content
+        /// Provides intelligent status categorization for better user experience
+        /// 
+        /// WINUI 2 SEVERITY MAPPING:
+        /// - Error (Red): "Error", "Failed" keywords
+        /// - Warning (Yellow): "Loading", "Adding", "Deleting" keywords (operations in progress)
+        /// - Success (Green): "Success", "Added", "Deleted", "Loaded" keywords (completed operations)  
+        /// - Informational (Blue): Default for general information
+        /// </summary>
+        private void UpdateInfoBarSeverity(string status)
+        {
+            // WINUI 2 UI ENHANCEMENT: Error states - red InfoBar with error icon
+            if (status.Contains("Error") || status.Contains("Failed"))
+            {
+                InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
+            }
+            // WINUI 2 UI ENHANCEMENT: Warning states - yellow InfoBar with warning icon
+            else if (status.Contains("Loading") || status.Contains("Adding") || status.Contains("Deleting"))
+            {
+                InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning;
+            }
+            // WINUI 2 UI ENHANCEMENT: Success states - green InfoBar with checkmark icon
+            else if (status.Contains("Success") || status.Contains("Added") || status.Contains("Deleted") || status.Contains("Loaded"))
+            {
+                InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
+            }
+            // WINUI 2 UI ENHANCEMENT: Default informational state - blue InfoBar with info icon
+            else
+            {
+                InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+            }
+        }
+
+        public ObservableCollection<Customer> Customers
+        {
+            get => _customers;
+            set
+            {
+                _customers = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CustomerSummary));
+                OnPropertyChanged(nameof(HasCustomers));
+            }
+        }
+
+        public ObservableCollection<Customer> FilteredCustomers
+        {
+            get => _filteredCustomers;
+            set
+            {
+                _filteredCustomers = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Customer SelectedCustomer
         {
             get => _selectedCustomer;
             set
             {
-                if (SetProperty(ref _selectedCustomer, value))
-                {
-                    // Update command availability based on selection
-                    OnSelectionChanged();
-                    
-                    // Persist selection for state restoration
-                    PersistSelection();
-                }
+                _selectedCustomer = value;
+                OnPropertyChanged();
             }
         }
 
-        /// <summary>
-        /// Gets or sets the search text for filtering customers.
-        /// Changes to this property trigger automatic filtering of the customer list.
-        /// </summary>
-        /// <remarks>
-        /// The search is performed across customer name, email, and company fields.
-        /// The search is case-insensitive and supports partial matches.
-        /// </remarks>
         public string SearchText
         {
             get => _searchText;
             set
             {
-                if (SetProperty(ref _searchText, value))
-                {
-                    // Automatically filter when search text changes
-                    FilterCustomers();
-                }
+                _searchText = value;
+                OnPropertyChanged();
+                FilterCustomers();
             }
         }
 
-        /// <summary>
-        /// Gets or sets whether a refresh operation is currently in progress.
-        /// This is used to show progress indicators and disable refresh actions.
-        /// </summary>
-        public bool IsRefreshing
-        {
-            get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
-        }
+        public bool HasCustomers => Customers != null && Customers.Count > 0;
 
-        /// <summary>
-        /// Gets or sets whether external data loading is in progress.
-        /// This is used to show progress indicators for network operations.
-        /// </summary>
-        public bool IsLoadingExternalData
-        {
-            get => _isLoadingExternalData;
-            set => SetProperty(ref _isLoadingExternalData, value);
-        }
-
-        /// <summary>
-        /// Gets or sets a summary text showing customer statistics.
-        /// This provides quick insights about the customer database.
-        /// </summary>
-        /// <remarks>
-        /// The summary includes information like total customer count,
-        /// number of customers with companies, recent additions, etc.
-        /// </remarks>
-        public string CustomerSummary
-        {
-            get => _customerSummary;
-            set => SetProperty(ref _customerSummary, value);
-        }
-
-        /// <summary>
-        /// Gets whether there are any customers in the database.
-        /// This is used to show/hide empty state UI elements.
-        /// </summary>
-        public bool HasCustomers => Customers?.Count > 0;
-
-        /// <summary>
-        /// Gets whether search is currently active.
-        /// This is used to show/hide search-related UI elements.
-        /// </summary>
-        public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchText);
-
-        /// <summary>
-        /// Gets the count of customers in the filtered list.
-        /// This is displayed in the UI to show how many customers match the current filter.
-        /// </summary>
-        public int FilteredCustomerCount => FilteredCustomers?.Count ?? 0;
-
-        #endregion
-
-        #region Commands
-
-        /// <summary>
-        /// Command to refresh the customer list from storage and optionally from external sources.
-        /// This command reloads data and updates the UI with any changes.
-        /// </summary>
-        public ICommand RefreshCommand { get; private set; }
-
-        /// <summary>
-        /// Command to add a new customer.
-        /// This command navigates to the Edit page in "add new" mode.
-        /// </summary>
-        public ICommand AddCustomerCommand { get; private set; }
-
-        /// <summary>
-        /// Command to edit the currently selected customer.
-        /// This command navigates to the Edit page with the selected customer data.
-        /// </summary>
+        // FILE I/O: Commands that trigger file operations
+        public ICommand AddCustomerCommand { get; private set; }        // FILE I/O: Triggers add + auto-save
         public ICommand EditSelectedCustomerCommand { get; private set; }
+        public ICommand DeleteSelectedCustomerCommand { get; private set; }  // FILE I/O: Triggers delete + auto-save
+        public ICommand RefreshCommand { get; private set; }                 // FILE I/O: Triggers reload from file
+        public ICommand LoadExternalDataCommand { get; private set; }        // FILE I/O: Triggers bulk add + auto-save
+        public ICommand ShowFileInfoCommand { get; private set; }            // FILE I/O: Shows file details
+        public ICommand DismissWelcomeCommand { get; private set; }          // SUSPENSION & RESUME: Dismisses welcome message
+        public ICommand RefreshWelcomeCommand { get; private set; }          // SUSPENSION & RESUME: Refreshes welcome message
+        public ICommand NavigateToEditCommand { get; private set; }          // ?? STATE MANAGEMENT: Navigate to edit with state
+        public ICommand NavigateToNewCustomerCommand { get; private set; }   // ?? STATE MANAGEMENT: Navigate to new customer
 
-        /// <summary>
-        /// Command to delete the currently selected customer.
-        /// This command shows a confirmation dialog and removes the customer if confirmed.
-        /// </summary>
-        public ICommand DeleteSelectedCustomerCommand { get; private set; }
-
-        /// <summary>
-        /// Command to clear the current search filter.
-        /// This command resets the search text and shows all customers.
-        /// </summary>
-        public ICommand ClearSearchCommand { get; private set; }
-
-        /// <summary>
-        /// Command to load sample data from the external API.
-        /// This command demonstrates network operations and data import functionality.
-        /// </summary>
-        public ICommand LoadExternalDataCommand { get; private set; }
-
-        /// <summary>
-        /// Command to export customer data.
-        /// This command demonstrates data export functionality.
-        /// </summary>
-        public ICommand ExportDataCommand { get; private set; }
-
-        /// <summary>
-        /// Command to handle customer selection (e.g., double-click to edit).
-        /// This provides an alternative way to initiate editing operations.
-        /// </summary>
-        public ICommand CustomerSelectedCommand { get; private set; }
-
-        #endregion
-
-        #region Constructor
-
-        /// <summary>
-        /// Initializes a new instance of the HomeViewModel class.
-        /// Sets up service references, initializes commands, and loads initial data.
-        /// </summary>
-        public HomeViewModel()
-        {
-            // Get service references
-            _dataService = DataService.Instance;
-            _networkService = NetworkService.Instance;
-            _settingsService = SettingsService.Instance;
-
-            // Initialize properties
-            Title = "Customer Management";
-            SearchText = string.Empty;
-            FilteredCustomers = new ObservableCollection<Customer>();
-
-            // Initialize commands
-            InitializeCommands();
-
-            // Load initial data
-            _ = LoadDataAsync();
-
-            Debug.WriteLine("HomeViewModel: Initialized successfully");
-        }
-
-        #endregion
-
-        #region Initialization
-
-        /// <summary>
-        /// Initializes all command properties with their respective implementations.
-        /// This method sets up the command bindings that will be used by the UI.
-        /// </summary>
-        protected override void Initialize()
-        {
-            base.Initialize();
-            InitializeCommands();
-        }
-
-        /// <summary>
-        /// Creates and configures all command objects used by this ViewModel.
-        /// Each command includes both an execution action and a condition for when it can execute.
-        /// </summary>
         private void InitializeCommands()
         {
-            // Refresh command - always available
-            RefreshCommand = new RelayCommand(
-                async () => await RefreshDataAsync(),
-                () => !IsRefreshing && !IsBusy);
-
-            // Add customer command - always available
-            AddCustomerCommand = new RelayCommand(
-                () => NavigateToAddCustomer(),
-                () => !IsBusy);
-
-            // Edit selected customer command - requires selection
-            EditSelectedCustomerCommand = new RelayCommand(
-                () => NavigateToEditCustomer(SelectedCustomer),
-                () => SelectedCustomer != null && !IsBusy);
-
-            // Delete selected customer command - requires selection
-            DeleteSelectedCustomerCommand = new RelayCommand(
-                async () => await DeleteSelectedCustomerAsync(),
-                () => SelectedCustomer != null && !IsBusy);
-
-            // Clear search command - available when search is active
-            ClearSearchCommand = new RelayCommand(
-                () => ClearSearch(),
-                () => IsSearchActive);
-
-            // Load external data command - available when network is available
-            LoadExternalDataCommand = new RelayCommand(
-                async () => await LoadExternalDataAsync(),
-                () => _networkService.IsAvailable && !IsLoadingExternalData && !IsBusy);
-
-            // Export data command - available when there are customers
-            ExportDataCommand = new RelayCommand(
-                async () => await ExportDataAsync(),
-                () => HasCustomers && !IsBusy);
-
-            // Customer selected command - for handling selection events
-            CustomerSelectedCommand = new RelayCommand<Customer>(
-                customer => OnCustomerSelected(customer),
-                customer => customer != null);
-        }
-
-        #endregion
-
-        #region Data Loading
-
-        /// <summary>
-        /// Loads customer data and initializes the ViewModel state.
-        /// This method is called during ViewModel initialization and when explicitly refreshing data.
-        /// </summary>
-        /// <returns>A task representing the asynchronous load operation</returns>
-        private async Task LoadDataAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                ClearError();
-
-                Debug.WriteLine("HomeViewModel: Loading customer data");
-
-                // Ensure data service is loaded
-                if (!_dataService.IsDataLoaded)
-                {
-                    await _dataService.LoadDataAsync();
-                }
-
-                // Initialize filtered customers
-                FilterCustomers();
-
-                // Update summary
-                UpdateCustomerSummary();
-
-                // Restore previous selection if any
-                RestoreSelection();
-
-                Debug.WriteLine($"HomeViewModel: Loaded {Customers.Count} customers");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error loading data: {ex.Message}");
-                SetError(ex, "Unable to load customer data. Please try again.");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            System.Diagnostics.Debug.WriteLine("FILE I/O: Initializing commands that will trigger file operations...");
+            
+            // FILE I/O: Wire up commands to methods that perform file operations
+            AddCustomerCommand = new RelayCommand(AddCustomer);                    // FILE I/O: Add customer ? save to file
+            EditSelectedCustomerCommand = new RelayCommand<Customer>(EditCustomer);
+            DeleteSelectedCustomerCommand = new RelayCommand<Customer>(DeleteCustomer);  // FILE I/O: Delete customer ? save to file
+            RefreshCommand = new RelayCommand(LoadCustomersAsync);                       // FILE I/O: Reload from file
+            LoadExternalDataCommand = new RelayCommand(LoadExternalData);               // FILE I/O: Add sample data ? save to file
+            ShowFileInfoCommand = new RelayCommand(ShowFileInfo);                      // FILE I/O: Show file details
+            DismissWelcomeCommand = new RelayCommand(DismissWelcomeMessage);           // SUSPENSION & RESUME: Dismiss welcome message
+            RefreshWelcomeCommand = new RelayCommand(RefreshWelcomeMessage);           // SUSPENSION & RESUME: Refresh welcome message
+            NavigateToEditCommand = new RelayCommand<Customer>(NavigateToEditCustomer);     // ?? STATE MANAGEMENT: Navigate to edit
+            NavigateToNewCustomerCommand = new RelayCommand(NavigateToNewCustomer);         // ?? STATE MANAGEMENT: Navigate to new customer
+            
+            System.Diagnostics.Debug.WriteLine("FILE I/O: Commands initialized - ready for file operations");
         }
 
         /// <summary>
-        /// Refreshes customer data from storage and updates the UI.
-        /// This method can be called by the user to get the latest data.
+        /// SUSPENSION & RESUME: Refresh welcome message
+        /// Useful for testing and updating message after suspension state changes
         /// </summary>
-        /// <returns>A task representing the asynchronous refresh operation</returns>
-        private async Task RefreshDataAsync()
+        public void RefreshWelcomeMessage()
         {
             try
             {
-                IsRefreshing = true;
-                ClearError();
-
-                Debug.WriteLine("HomeViewModel: Refreshing customer data");
-
-                // Reload data from storage
-                await _dataService.LoadDataAsync();
-
-                // Update filtered customers
-                FilterCustomers();
-
-                // Update summary
-                UpdateCustomerSummary();
-
-                // Refresh UI
-                OnPropertiesChanged(nameof(HasCustomers), nameof(FilteredCustomerCount));
-
-                Debug.WriteLine("HomeViewModel: Data refresh completed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error refreshing data: {ex.Message}");
-                SetError(ex, "Unable to refresh customer data. Please check your connection and try again.");
-            }
-            finally
-            {
-                IsRefreshing = false;
-                RaiseCanExecuteChanged();
-            }
-        }
-
-        /// <summary>
-        /// Loads sample data from the external JSONPlaceholder API.
-        /// This method demonstrates network operations and data import functionality.
-        /// </summary>
-        /// <returns>A task representing the asynchronous load operation</returns>
-        private async Task LoadExternalDataAsync()
-        {
-            try
-            {
-                IsLoadingExternalData = true;
-                ClearError();
-
-                Debug.WriteLine("HomeViewModel: Loading external data from API");
-
-                // Check network availability
-                if (!_networkService.IsAvailable)
-                {
-                    SetError("Network not available. Please check your connection and try again.");
-                    return;
-                }
-
-                // Test API connectivity
-                bool apiAvailable = await _networkService.TestApiConnectivityAsync();
-                if (!apiAvailable)
-                {
-                    SetError("API not available. Please try again later.");
-                    return;
-                }
-
-                // Load users from API
-                var externalUsers = await _networkService.GetUsersAsync();
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Refreshing welcome message");
                 
-                if (externalUsers?.Count > 0)
-                {
-                    int importedCount = 0;
-                    
-                    foreach (var user in externalUsers)
-                    {
-                        // Convert to Customer and check if already exists
-                        var customer = _networkService.ConvertToCustomer(user);
-                        
-                        // Check if customer already exists (by email)
-                        bool exists = Customers.Any(c => 
-                            string.Equals(c.Email, customer.Email, StringComparison.OrdinalIgnoreCase));
-                        
-                        if (!exists)
-                        {
-                            await _dataService.AddCustomerAsync(customer);
-                            importedCount++;
-                        }
-                    }
-
-                    // Update UI
-                    FilterCustomers();
-                    UpdateCustomerSummary();
-                    OnPropertiesChanged(nameof(HasCustomers), nameof(FilteredCustomerCount));
-
-                    Debug.WriteLine($"HomeViewModel: Imported {importedCount} new customers from external API");
-                    
-                    if (importedCount > 0)
-                    {
-                        // Could show success message here
-                    }
-                    else
-                    {
-                        SetError("No new customers to import. All external customers already exist in the database.");
-                    }
-                }
-                else
-                {
-                    SetError("No data received from external API. Please try again later.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error loading external data: {ex.Message}");
-                SetError(ex, "Unable to load data from external API. Please check your connection and try again.");
-            }
-            finally
-            {
-                IsLoadingExternalData = false;
-                RaiseCanExecuteChanged();
-            }
-        }
-
-        #endregion
-
-        #region Search and Filtering
-
-        /// <summary>
-        /// Filters the customer list based on the current search text.
-        /// This method updates the FilteredCustomers collection to show only matching customers.
-        /// </summary>
-        /// <remarks>
-        /// The search is performed across multiple customer fields:
-        /// - First Name
-        /// - Last Name
-        /// - Email
-        /// - Company
-        /// 
-        /// The search is case-insensitive and supports partial matches.
-        /// When no search text is provided, all customers are shown.
-        /// </remarks>
-        private void FilterCustomers()
-        {
-            try
-            {
-                FilteredCustomers.Clear();
-
-                if (string.IsNullOrWhiteSpace(SearchText))
-                {
-                    // No search - show all customers
-                    foreach (var customer in Customers)
-                    {
-                        FilteredCustomers.Add(customer);
-                    }
-                }
-                else
-                {
-                    // Filter based on search criteria
-                    var filteredResults = _dataService.SearchCustomers(SearchText);
-                    foreach (var customer in filteredResults)
-                    {
-                        FilteredCustomers.Add(customer);
-                    }
-                }
-
-                // Update related properties
-                OnPropertiesChanged(
-                    nameof(FilteredCustomerCount),
-                    nameof(IsSearchActive));
-
-                Debug.WriteLine($"HomeViewModel: Filtered customers - showing {FilteredCustomers.Count} of {Customers.Count}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error filtering customers: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Clears the current search filter and shows all customers.
-        /// </summary>
-        private void ClearSearch()
-        {
-            try
-            {
-                SearchText = string.Empty;
-                // FilterCustomers() is automatically called by the SearchText setter
-                Debug.WriteLine("HomeViewModel: Search cleared");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error clearing search: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Customer Operations
-
-        /// <summary>
-        /// Navigates to the Edit page to add a new customer.
-        /// </summary>
-        private void NavigateToAddCustomer()
-        {
-            try
-            {
-                Debug.WriteLine("HomeViewModel: Navigating to add new customer");
+                // SUSPENSION & RESUME: Get fresh welcome message
+                WelcomeMessage = SuspensionService.Instance.GetWelcomeBackMessage();
+                OnPropertyChanged(nameof(ShowWelcomeMessage));
                 
-                // Navigate to Edit page without a customer (add mode)
-                NavigationHelper.NavigateTo<Views.EditPage>(null);
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message refreshed: '{WelcomeMessage}'");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomeViewModel: Error navigating to add customer: {ex.Message}");
-                SetError("Unable to open the add customer page. Please try again.");
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to refresh welcome message - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigates to the Edit page to edit the specified customer.
+        /// ?? STATE MANAGEMENT: Navigate to edit customer with state preservation
+        /// ?? Enhanced: Use MainPage's direct navigation methods
+        /// ?? Called when user clicks Edit button on customer list
         /// </summary>
-        /// <param name="customer">The customer to edit</param>
         private void NavigateToEditCustomer(Customer customer)
         {
             try
             {
-                if (customer == null)
-                {
-                    SetError("Please select a customer to edit.");
-                    return;
-                }
-
-                Debug.WriteLine($"HomeViewModel: Navigating to edit customer {customer.FullName}");
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: HomeViewModel navigating to edit customer: {customer?.FullName}");
                 
-                // Navigate to Edit page with the selected customer
-                NavigationHelper.NavigateTo<Views.EditPage>(customer);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error navigating to edit customer: {ex.Message}");
-                SetError("Unable to open the edit customer page. Please try again.");
-            }
-        }
-
-        /// <summary>
-        /// Deletes the currently selected customer after confirmation.
-        /// This method shows a confirmation dialog before performing the delete operation.
-        /// </summary>
-        /// <returns>A task representing the asynchronous delete operation</returns>
-        private async Task DeleteSelectedCustomerAsync()
-        {
-            try
-            {
-                if (SelectedCustomer == null)
-                {
-                    SetError("Please select a customer to delete.");
-                    return;
-                }
-
-                var customerToDelete = SelectedCustomer;
-                
-                Debug.WriteLine($"HomeViewModel: Deleting customer {customerToDelete.FullName}");
-
-                // In a real app, you would show a confirmation dialog here
-                // For this demo, we'll proceed with the deletion
-                
-                // Clear selection before deletion
-                SelectedCustomer = null;
-
-                // Delete the customer
-                await _dataService.RemoveCustomerAsync(customerToDelete);
-
-                // Update UI
-                FilterCustomers();
-                UpdateCustomerSummary();
-                OnPropertiesChanged(nameof(HasCustomers), nameof(FilteredCustomerCount));
-
-                Debug.WriteLine($"HomeViewModel: Successfully deleted customer {customerToDelete.FullName}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error deleting customer: {ex.Message}");
-                SetError(ex, "Unable to delete the selected customer. Please try again.");
-            }
-            finally
-            {
-                RaiseCanExecuteChanged();
-            }
-        }
-
-        /// <summary>
-        /// Handles customer selection events (e.g., double-click to edit).
-        /// </summary>
-        /// <param name="customer">The customer that was selected</param>
-        private void OnCustomerSelected(Customer customer)
-        {
-            try
-            {
                 if (customer != null)
                 {
-                    SelectedCustomer = customer;
+                    // ?? NAVIGATION: Try to use MainPage's direct navigation method
+                    try
+                    {
+                        var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                        if (currentFrame?.Content is MainPage mainPage)
+                        {
+                            mainPage.NavigateToEditWithCustomer(customer);
+                            System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully used MainPage.NavigateToEditWithCustomer");
+                            return;
+                        }
+                    }
+                    catch (Exception navEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: MainPage navigation failed - {navEx.Message}");
+                    }
                     
-                    // For double-click behavior, could navigate to edit
-                    // NavigateToEditCustomer(customer);
+                    // ?? FALLBACK: Store state and show informative message
+                    var stateService = NavigationStateService.Instance;
+                    stateService.SetSelectedCustomerForEdit(customer);
+                    
+                    _dialogService.ShowMessageAsync("Edit Customer", 
+                        $"Customer '{customer.FullName}' has been selected for editing.\n\n" +
+                        $"Please navigate to 'Customer Editor' from the main menu to edit this customer.\n\n" +
+                        $"The customer data has been stored and will be automatically loaded.");
+                    
+                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Customer edit navigation completed with fallback");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomeViewModel: Error handling customer selection: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to edit customer - {ex.Message}");
             }
         }
 
-        #endregion
-
-        #region Selection Management
-
         /// <summary>
-        /// Handles changes to the selected customer.
-        /// This method updates command availability and performs related actions.
+        /// ?? STATE MANAGEMENT: Navigate to new customer creation
+        /// ?? Enhanced: Use MainPage's direct navigation methods
+        /// ?? Called when user wants to create a new customer
         /// </summary>
-        private void OnSelectionChanged()
+        private void NavigateToNewCustomer()
         {
             try
             {
-                // Update command availability
-                RaiseCanExecuteChanged();
+                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: HomeViewModel navigating to new customer");
                 
-                Debug.WriteLine($"HomeViewModel: Selection changed to {SelectedCustomer?.FullName ?? "None"}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error handling selection change: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Persists the current customer selection to settings for state restoration.
-        /// </summary>
-        private void PersistSelection()
-        {
-            try
-            {
-                string customerId = SelectedCustomer?.Id.ToString() ?? string.Empty;
-                _settingsService.SetSelectedCustomerId(customerId);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error persisting selection: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Restores the previously selected customer from settings.
-        /// </summary>
-        private void RestoreSelection()
-        {
-            try
-            {
-                string savedCustomerId = _settingsService.GetSelectedCustomerId();
-                if (!string.IsNullOrEmpty(savedCustomerId) && int.TryParse(savedCustomerId, out int customerId))
+                // ?? NAVIGATION: Try to use MainPage's direct navigation method
+                try
                 {
-                    var customer = _dataService.GetCustomerById(customerId);
-                    if (customer != null)
+                    var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                    if (currentFrame?.Content is MainPage mainPage)
                     {
-                        SelectedCustomer = customer;
-                        Debug.WriteLine($"HomeViewModel: Restored selection to {customer.FullName}");
+                        mainPage.NavigateToNewCustomer();
+                        System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully used MainPage.NavigateToNewCustomer");
+                        return;
                     }
                 }
+                catch (Exception navEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: MainPage navigation failed - {navEx.Message}");
+                }
+                
+                // ?? FALLBACK: Clear state and show informative message
+                var stateService = NavigationStateService.Instance;
+                stateService.ClearAllState();
+                
+                _dialogService.ShowMessageAsync("New Customer", 
+                    "Ready to create a new customer!\n\n" +
+                    "Please navigate to 'Customer Editor' from the main menu to create a new customer.\n\n" +
+                    "The form has been cleared and is ready for new customer data.");
+                
+                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: New customer navigation completed with fallback");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomeViewModel: Error restoring selection: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to new customer - {ex.Message}");
             }
         }
 
-        #endregion
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        #region UI Updates
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #region Missing Methods
 
         /// <summary>
-        /// Updates the customer summary text with current statistics.
-        /// This method generates a summary of the customer database for display in the UI.
+        /// SUSPENSION & RESUME: Initialize welcome message based on app state
         /// </summary>
-        private void UpdateCustomerSummary()
+        private void InitializeWelcomeMessage()
         {
             try
             {
-                if (!HasCustomers)
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Initializing welcome message...");
+                
+                // SUSPENSION & RESUME: Always get and show welcome message
+                WelcomeMessage = SuspensionService.Instance.GetWelcomeBackMessage();
+                
+                // SUSPENSION & RESUME: Log suspension state details
+                var suspensionSummary = SuspensionService.Instance.GetSuspensionSummary();
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: {suspensionSummary}");
+                
+                // SUSPENSION & RESUME: Ensure UI updates
+                OnPropertyChanged(nameof(ShowWelcomeMessage));
+                
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message initialized: '{WelcomeMessage}' (ShowWelcomeMessage: {ShowWelcomeMessage})");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to initialize welcome message - {ex.Message}");
+                WelcomeMessage = "?? Welcome to Customer Management!";
+                OnPropertyChanged(nameof(ShowWelcomeMessage));
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Dismiss welcome message
+        /// </summary>
+        public void DismissWelcomeMessage()
+        {
+            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Dismissing welcome message");
+            
+            // SUSPENSION & RESUME: Clear suspension flag when user dismisses message
+            SuspensionService.Instance.ClearSuspensionFlag();
+            
+            WelcomeMessage = "";
+            OnPropertyChanged(nameof(ShowWelcomeMessage));
+            
+            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Welcome message dismissed and suspension flag cleared");
+        }
+
+        /// <summary>
+        /// FILE I/O: PRIMARY LOAD OPERATION - Loads customers from file and updates UI
+        /// </summary>
+        private async void LoadCustomersAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("FILE I/O: LoadCustomersAsync - requesting customer data from file");
+                
+                // FILE I/O: Update status to show file loading is in progress
+                FileStatus = "Loading customers from file...";
+                
+                // FILE I/O: Request customer data - this triggers file load in CustomerService
+                var customers = await _customerService.GetCustomersAsync();  // FILE I/O: This loads from file
+                
+                // Update UI with loaded data
+                Customers = new ObservableCollection<Customer>(customers);
+                FilterCustomers();
+                
+                // FILE I/O: Get and display file information for user feedback
+                var fileInfo = await _customerService.GetFileInfoAsync();  // FILE I/O: Get file details
+                FileStatus = $"Loaded {customers.Count} customers. {fileInfo}";
+                
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: Successfully loaded {customers.Count} customers from file and updated UI");
+            }
+            catch (Exception ex)
+            {
+                // FILE I/O: Handle file loading errors gracefully
+                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to load customers from file - {ex.Message}");
+                FileStatus = $"Error loading customers: {ex.Message}";
+            }
+        }
+
+        private void FilterCustomers()
+        {
+            if (Customers == null)
+            {
+                FilteredCustomers = new ObservableCollection<Customer>();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                FilteredCustomers = new ObservableCollection<Customer>(Customers);
+            }
+            else
+            {
+                var searchLower = SearchText.ToLower();
+                var filtered = Customers.Where(c =>
+                    c.FullName.ToLower().Contains(searchLower) ||
+                    c.Email.ToLower().Contains(searchLower) ||
+                    (!string.IsNullOrEmpty(c.Company) && c.Company.ToLower().Contains(searchLower)));
+                FilteredCustomers = new ObservableCollection<Customer>(filtered);
+            }
+        }
+
+        /// <summary>
+        /// FILE I/O: ADD CUSTOMER OPERATION - Creates new customer and triggers auto-save to file
+        /// </summary>
+        private async void AddCustomer()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("FILE I/O: AddCustomer - starting add operation with file save");
+                
+                // FILE I/O: Update status to show add operation is in progress
+                FileStatus = "Adding new customer...";
+                
+                // Create new customer object
+                var newCustomer = new Customer 
+                { 
+                    FirstName = "New", 
+                    LastName = $"Customer {Customers.Count + 1}", 
+                    Email = $"customer{Customers.Count + 1}@example.com",
+                    Company = "Sample Company"
+                };
+                
+                // FILE I/O: Add customer to service - this triggers automatic save to file
+                await _customerService.AddCustomerAsync(newCustomer);  // FILE I/O: Add + auto-save to file
+                
+                // FILE I/O: Refresh UI by reloading from file to confirm save worked
+                LoadCustomersAsync();  // FILE I/O: Reload from file to show updated data
+                
+                // FILE I/O: Update status to confirm successful save
+                FileStatus = $"Added customer: {newCustomer.FullName}";
+                
+                // FILE I/O: Show user confirmation that data was saved to file
+                await _dialogService.ShowMessageAsync(
+                    "Customer Added", 
+                    $"Successfully added {newCustomer.FullName} and saved to file!");
+                
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: AddCustomer completed - {newCustomer.FullName} added and saved to file");
+            }
+            catch (Exception ex)
+            {
+                // FILE I/O: Handle add/save errors with user notification
+                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to add customer and save to file - {ex.Message}");
+                FileStatus = $"Error adding customer: {ex.Message}";
+                
+                await _dialogService.ShowMessageAsync("Error", $"Failed to add customer: {ex.Message}");
+            }
+        }
+
+        private async void EditCustomer(Customer customer)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: EditCustomer called for {customer?.FullName}");
+                
+                if (customer != null)
                 {
-                    CustomerSummary = "No customers in the database. Add some customers to get started.";
-                    return;
+                    // FILE I/O: Edit functionality would call UpdateCustomerAsync() which auto-saves to file
+                    await _dialogService.ShowMessageAsync("Edit", $"Edit feature for {customer.FullName} coming soon!");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in EditCustomer: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// FILE I/O: DELETE CUSTOMER OPERATION - Removes customer and triggers auto-save to file
+        /// </summary>
+        private async void DeleteCustomer(Customer customer)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: DeleteCustomer - starting delete operation for {customer?.FullName}");
+                
+                if (customer == null) return;
+
+                // FILE I/O: Confirm deletion with user - emphasize file persistence
+                var result = await _dialogService.ShowConfirmationAsync(
+                    "Delete Customer",
+                    $"Are you sure you want to delete {customer.FullName}?\n\nThis will permanently remove them from the file.",
+                    "Delete",
+                    "Cancel");
+
+                if (result == Windows.UI.Xaml.Controls.ContentDialogResult.Primary)
+                {
+                    // FILE I/O: Update status to show delete operation is in progress
+                    FileStatus = $"Deleting {customer.FullName}...";
+                    
+                    // FILE I/O: Delete customer from service - this triggers automatic save to file
+                    await _customerService.DeleteCustomerAsync(customer.Id);  // FILE I/O: Delete + auto-save to file
+                    
+                    // Update UI immediately for responsive feel
+                    Customers.Remove(customer);
+                    FilterCustomers();
+                    
+                    // FILE I/O: Update status to confirm successful deletion and save
+                    FileStatus = $"Deleted customer: {customer.FullName}";
+                    
+                    // FILE I/O: Show user confirmation that data was removed from file
+                    await _dialogService.ShowMessageAsync(
+                        "Customer Deleted", 
+                        $"Successfully deleted {customer.FullName} and updated file!");
+                    
+                    System.Diagnostics.Debug.WriteLine($"FILE I/O: DeleteCustomer completed - {customer.FullName} deleted and file updated");
+                }
+            }
+            catch (Exception ex)
+            {
+                // FILE I/O: Handle delete/save errors with user notification
+                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to delete customer and update file - {ex.Message}");
+                FileStatus = $"Error deleting customer: {ex.Message}";
+                
+                await _dialogService.ShowMessageAsync("Error", $"Failed to delete customer: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// FILE I/O: BULK ADD OPERATION - Loads sample data and triggers auto-save to file
+        /// </summary>
+        private async void LoadExternalData()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("FILE I/O: LoadExternalData - starting bulk add operation with file save");
+                
+                // FILE I/O: Update status to show bulk loading is in progress
+                FileStatus = "Loading sample data...";
+                
+                // Create sample customer data
+                var sampleCustomers = new[]
+                {
+                    new Customer { FirstName = "Alice", LastName = "Johnson", Email = "alice@example.com", Company = "Tech Corp" },
+                    new Customer { FirstName = "Bob", LastName = "Wilson", Email = "bob@example.com", Phone = "555-0124", Company = "Marketing Inc" },
+                    new Customer { FirstName = "Carol", LastName = "Davis", Email = "carol@example.com", Phone = "555-0125", Company = "Design Studio" }
+                };
+
+                // FILE I/O: Add each customer - each triggers an auto-save to file
+                foreach (var customer in sampleCustomers)
+                {
+                    await _customerService.AddCustomerAsync(customer);  // FILE I/O: Add + auto-save to file
+                    System.Diagnostics.Debug.WriteLine($"FILE I/O: Added sample customer {customer.FullName} and saved to file");
                 }
 
-                int totalCustomers = Customers.Count;
-                int customersWithCompany = Customers.Count(c => !string.IsNullOrWhiteSpace(c.Company));
-                int recentCustomers = Customers.Count(c => (DateTime.Now - c.DateCreated).TotalDays <= 7);
-
-                CustomerSummary = $"{totalCustomers} customer{(totalCustomers != 1 ? "s" : "")} total, " +
-                                 $"{customersWithCompany} with company info, " +
-                                 $"{recentCustomers} added this week";
-
-                Debug.WriteLine($"HomeViewModel: Updated customer summary: {CustomerSummary}");
+                // FILE I/O: Refresh UI by reloading from file to show all new data
+                LoadCustomersAsync();  // FILE I/O: Reload from file to show updated data
+                
+                // FILE I/O: Show user confirmation that all data was saved to file
+                await _dialogService.ShowMessageAsync(
+                    "Sample Data Loaded", 
+                    $"Added {sampleCustomers.Length} sample customers and saved to file!");
+                
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: LoadExternalData completed - {sampleCustomers.Length} customers added and saved to file");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomeViewModel: Error updating customer summary: {ex.Message}");
-                CustomerSummary = "Unable to generate customer summary.";
+                // FILE I/O: Handle bulk add/save errors with user notification
+                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to load sample data and save to file - {ex.Message}");
+                FileStatus = $"Error loading sample data: {ex.Message}";
+                
+                await _dialogService.ShowMessageAsync("Error", $"Failed to load sample data: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Raises CanExecuteChanged for all commands to update UI button states.
-        /// This method should be called whenever conditions that affect command availability change.
+        /// FILE I/O: FILE INFO OPERATION - Shows detailed file information to user
         /// </summary>
-        private void RaiseCanExecuteChanged()
+        private async void ShowFileInfo()
         {
             try
             {
-                (RefreshCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (AddCustomerCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (EditSelectedCustomerCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (DeleteSelectedCustomerCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (ClearSearchCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (LoadExternalDataCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (ExportDataCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                System.Diagnostics.Debug.WriteLine("FILE I/O: ShowFileInfo - requesting file details for user display");
+                
+                // FILE I/O: Get file information from service
+                var fileInfo = await _customerService.GetFileInfoAsync();  // FILE I/O: Query file system details
+                
+                // FILE I/O: Display file details to user
+                await _dialogService.ShowMessageAsync("File Information", fileInfo);
+                
+                System.Diagnostics.Debug.WriteLine($"FILE I/O: Displayed file info to user: {fileInfo}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomeViewModel: Error raising CanExecuteChanged: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Export Operations
-
-        /// <summary>
-        /// Exports customer data to a file.
-        /// This method demonstrates data export functionality.
-        /// </summary>
-        /// <returns>A task representing the asynchronous export operation</returns>
-        private async Task ExportDataAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                ClearError();
-
-                Debug.WriteLine("HomeViewModel: Starting data export");
-
-                // In a real app, you would show a file picker and export to the selected location
-                // For this demo, we'll just save to the app's local folder with a timestamp
-                
-                bool success = await _dataService.SaveDataAsync();
-                
-                if (success)
-                {
-                    Debug.WriteLine("HomeViewModel: Data export completed successfully");
-                    // Could show success message here
-                }
-                else
-                {
-                    SetError("Unable to export customer data. Please try again.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error exporting data: {ex.Message}");
-                SetError(ex, "Unable to export customer data. Please try again.");
-            }
-            finally
-            {
-                IsBusy = false;
-                RaiseCanExecuteChanged();
-            }
-        }
-
-        #endregion
-
-        #region Cleanup
-
-        /// <summary>
-        /// Performs cleanup when the ViewModel is no longer needed.
-        /// This method ensures proper resource disposal and event unsubscription.
-        /// </summary>
-        protected override void Cleanup()
-        {
-            try
-            {
-                // Clear collections
-                FilteredCustomers?.Clear();
-                
-                // Clear selection
-                SelectedCustomer = null;
-                
-                // Clear search
-                SearchText = string.Empty;
-                
-                Debug.WriteLine("HomeViewModel: Cleanup completed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomeViewModel: Error during cleanup: {ex.Message}");
-            }
-            finally
-            {
-                base.Cleanup();
+                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to get file info - {ex.Message}");
+                await _dialogService.ShowMessageAsync("Error", $"Failed to get file info: {ex.Message}");
             }
         }
 

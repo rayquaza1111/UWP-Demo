@@ -1,344 +1,112 @@
 using System;
-using System.Threading.Tasks;
-using UWP_Demo.Models;
 using Windows.Storage;
 using Windows.UI.Xaml;
-using Newtonsoft.Json;
 
 namespace UWP_Demo.Services
 {
     /// <summary>
-    /// Service class responsible for managing application settings persistence using
-    /// Windows ApplicationDataContainer for local settings storage.
-    /// This service demonstrates UWP settings management and theme handling.
+    /// Service for managing application settings with persistent storage
+    /// Uses ApplicationDataContainer to save/load user preferences
     /// </summary>
-    /// <remarks>
-    /// This service demonstrates several important UWP concepts:
-    /// - ApplicationDataContainer for persistent settings storage
-    /// - Theme management with automatic UI updates
-    /// - Singleton pattern for consistent settings access
-    /// - Event-driven architecture for settings changes
-    /// - Default value handling and settings validation
-    /// - JSON serialization for complex settings objects
-    /// 
-    /// The service uses ApplicationDataContainer which automatically handles:
-    /// - Cross-device settings synchronization (when enabled)
-    /// - Backup and restore during Windows updates
-    /// - Automatic persistence without explicit save operations
-    /// </remarks>
     public class SettingsService
     {
-        #region Private Fields
-
-        /// <summary>
-        /// The singleton instance of the SettingsService.
-        /// </summary>
         private static SettingsService _instance;
-
-        /// <summary>
-        /// Lock object for thread-safe singleton access.
-        /// </summary>
-        private static readonly object _lock = new object();
-
-        /// <summary>
-        /// The local settings container provided by UWP for persistent storage.
-        /// This automatically handles data persistence and cross-device sync.
-        /// </summary>
+        // THEME PERSISTENCE: Reference to local settings storage for saving/loading theme preferences
         private readonly ApplicationDataContainer _localSettings;
 
-        /// <summary>
-        /// The current application settings instance.
-        /// This is cached in memory for performance and change tracking.
-        /// </summary>
-        private AppSettings _currentSettings;
+        // THEME PERSISTENCE: Setting keys for ApplicationDataContainer storage
+        private const string THEME_SETTING_KEY = "AppTheme";
+        private const string NOTIFICATIONS_SETTING_KEY = "NotificationsEnabled";
+        private const string AUTOSAVE_SETTING_KEY = "AutoSaveEnabled";
 
-        /// <summary>
-        /// Key names for storing settings in ApplicationDataContainer.
-        /// Using constants prevents typos and makes refactoring easier.
-        /// </summary>
-        private const string SETTINGS_KEY = "AppSettings";
-        private const string THEME_KEY = "CurrentTheme";
-        private const string LAST_CUSTOMER_KEY = "LastSelectedCustomerId";
-        private const string LAST_LAUNCH_KEY = "LastAppLaunch";
-        private const string FIRST_RUN_KEY = "IsFirstRun";
-        private const string NOTIFICATIONS_KEY = "EnableNotifications";
-        private const string AUTO_SAVE_KEY = "AutoSaveData";
-        private const string AUTO_SAVE_INTERVAL_KEY = "AutoSaveIntervalMinutes";
+        public static SettingsService Instance => _instance ?? (_instance = new SettingsService());
 
-        #endregion
-
-        #region Events
-
-        /// <summary>
-        /// Event raised when the application theme changes.
-        /// This allows UI components to respond to theme changes automatically.
-        /// </summary>
-        /// <remarks>
-        /// Subscribe to this event to perform actions when the theme changes,
-        /// such as updating custom UI elements that don't automatically
-        /// respond to theme changes.
-        /// </remarks>
-        /// <example>
-        /// SettingsService.Instance.ThemeChanged += (sender, theme) =>
-        /// {
-        ///     UpdateCustomControls(theme);
-        /// };
-        /// </example>
-        public event EventHandler<ElementTheme> ThemeChanged;
-
-        /// <summary>
-        /// Event raised when any application setting changes.
-        /// This provides a centralized way to respond to settings changes.
-        /// </summary>
-        public event EventHandler<AppSettings> SettingsChanged;
-
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Gets the singleton instance of the SettingsService.
-        /// Creates the instance if it doesn't exist (thread-safe).
-        /// </summary>
-        public static SettingsService Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new SettingsService();
-                        }
-                    }
-                }
-                return _instance;
-            }
-        }
-
-        /// <summary>
-        /// Gets the current application settings.
-        /// This property loads settings from storage if not already cached.
-        /// </summary>
-        /// <remarks>
-        /// The settings are cached in memory for performance. The first access
-        /// loads from ApplicationDataContainer, subsequent accesses use the cache.
-        /// Settings are automatically saved when modified through this service.
-        /// </remarks>
-        public AppSettings CurrentSettings
-        {
-            get
-            {
-                if (_currentSettings == null)
-                {
-                    LoadSettings();
-                }
-                return _currentSettings;
-            }
-            private set
-            {
-                _currentSettings = value;
-                SaveSettings();
-                SettingsChanged?.Invoke(this, value);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the current application theme.
-        /// Changing this property automatically updates the UI and saves the setting.
-        /// </summary>
-        /// <remarks>
-        /// This property provides a convenient way to get/set the theme without
-        /// accessing the full settings object. It automatically applies the theme
-        /// to the current window and raises the ThemeChanged event.
-        /// </remarks>
-        /// <example>
-        /// // Change to dark theme
-        /// SettingsService.Instance.CurrentTheme = ElementTheme.Dark;
-        /// </example>
-        public ElementTheme CurrentTheme
-        {
-            get => CurrentSettings.CurrentTheme;
-            set
-            {
-                if (CurrentSettings.CurrentTheme != value)
-                {
-                    CurrentSettings.CurrentTheme = value;
-                    ApplyTheme(value);
-                    SaveSettings();
-                    ThemeChanged?.Invoke(this, value);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Constructor
-
-        /// <summary>
-        /// Private constructor for singleton pattern.
-        /// Initializes the settings container and loads current settings.
-        /// </summary>
         private SettingsService()
         {
-            // Get reference to the local settings container
+            // THEME PERSISTENCE: Get reference to local settings container for saving/loading
             _localSettings = ApplicationData.Current.LocalSettings;
-            
-            // Load settings immediately to ensure they're available
-            LoadSettings();
+        }
+
+        #region Theme Settings
+
+        /// <summary>
+        /// Gets or sets the current application theme
+        /// Values: 0 = Default, 1 = Light, 2 = Dark
+        /// </summary>
+        public ElementTheme CurrentTheme
+        {
+            get
+            {
+                // THEME PERSISTENCE: Load theme from settings, default to system theme if not set
+                var themeValue = _localSettings.Values[THEME_SETTING_KEY];
+                if (themeValue != null && int.TryParse(themeValue.ToString(), out int theme))
+                {
+                    return (ElementTheme)theme;
+                }
+                return ElementTheme.Default; // System default
+            }
+            set
+            {
+                // THEME PERSISTENCE: Save theme to persistent storage
+                _localSettings.Values[THEME_SETTING_KEY] = (int)value;
+                
+                // Apply theme immediately
+                ApplyTheme(value);
+                
+                // Notify about theme change
+                ThemeChanged?.Invoke(this, value);
+                
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Theme changed to {value}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the current theme as a boolean for toggle switch binding
+        /// True = Dark theme, False = Light theme or Default
+        /// </summary>
+        public bool IsDarkTheme
+        {
+            // THEME PERSISTENCE: Convert theme enum to boolean for UI binding
+            get => CurrentTheme == ElementTheme.Dark;
+            // THEME PERSISTENCE: Convert boolean to theme enum and save via CurrentTheme property
+            set => CurrentTheme = value ? ElementTheme.Dark : ElementTheme.Light;
         }
 
         #endregion
 
-        #region Settings Loading and Saving
+        #region Application Settings
 
         /// <summary>
-        /// Loads application settings from ApplicationDataContainer.
-        /// If no settings exist, creates default settings.
+        /// Gets or sets whether notifications are enabled
         /// </summary>
-        /// <remarks>
-        /// This method first tries to load a complete settings object from JSON.
-        /// If that fails (due to version changes or corruption), it falls back
-        /// to loading individual settings values with default fallbacks.
-        /// </remarks>
-        private void LoadSettings()
+        public bool NotificationsEnabled
         {
-            try
+            get
             {
-                // Try to load complete settings object first (newer format)
-                if (_localSettings.Values.TryGetValue(SETTINGS_KEY, out object settingsJson) && 
-                    settingsJson is string jsonString && 
-                    !string.IsNullOrWhiteSpace(jsonString))
-                {
-                    try
-                    {
-                        _currentSettings = JsonConvert.DeserializeObject<AppSettings>(jsonString);
-                        
-                        // Validate loaded settings
-                        if (_currentSettings != null && _currentSettings.ValidateSettings())
-                        {
-                            System.Diagnostics.Debug.WriteLine("SettingsService: Loaded settings from JSON");
-                            return;
-                        }
-                    }
-                    catch (JsonException ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"SettingsService: JSON deserialization error: {ex.Message}");
-                    }
-                }
-
-                // Fall back to loading individual settings (older format or first run)
-                _currentSettings = new AppSettings();
-                LoadIndividualSettings();
-
-                System.Diagnostics.Debug.WriteLine("SettingsService: Loaded individual settings or created defaults");
+                var value = _localSettings.Values[NOTIFICATIONS_SETTING_KEY];
+                return value != null ? (bool)value : true; // Default: enabled
             }
-            catch (Exception ex)
+            set
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error loading settings: {ex.Message}");
-                
-                // If all else fails, create default settings
-                _currentSettings = new AppSettings();
-            }
-
-            // Ensure settings are saved in the new format
-            SaveSettings();
-        }
-
-        /// <summary>
-        /// Loads individual settings from ApplicationDataContainer for backward compatibility.
-        /// This method provides fallback when JSON loading fails.
-        /// </summary>
-        private void LoadIndividualSettings()
-        {
-            // Load theme setting
-            if (_localSettings.Values.TryGetValue(THEME_KEY, out object themeValue) && 
-                themeValue is int themeInt && 
-                Enum.IsDefined(typeof(ElementTheme), themeInt))
-            {
-                _currentSettings.CurrentTheme = (ElementTheme)themeInt;
-            }
-
-            // Load last selected customer
-            if (_localSettings.Values.TryGetValue(LAST_CUSTOMER_KEY, out object customerValue) && 
-                customerValue is string customerString)
-            {
-                _currentSettings.LastSelectedCustomerId = customerString;
-            }
-
-            // Load last launch time
-            if (_localSettings.Values.TryGetValue(LAST_LAUNCH_KEY, out object launchValue) && 
-                launchValue is string launchString && 
-                DateTime.TryParse(launchString, out DateTime launchTime))
-            {
-                _currentSettings.LastAppLaunch = launchTime;
-            }
-
-            // Load first run flag
-            if (_localSettings.Values.TryGetValue(FIRST_RUN_KEY, out object firstRunValue) && 
-                firstRunValue is bool firstRunBool)
-            {
-                _currentSettings.IsFirstRun = firstRunBool;
-            }
-
-            // Load notifications setting
-            if (_localSettings.Values.TryGetValue(NOTIFICATIONS_KEY, out object notificationsValue) && 
-                notificationsValue is bool notificationsBool)
-            {
-                _currentSettings.EnableNotifications = notificationsBool;
-            }
-
-            // Load auto-save setting
-            if (_localSettings.Values.TryGetValue(AUTO_SAVE_KEY, out object autoSaveValue) && 
-                autoSaveValue is bool autoSaveBool)
-            {
-                _currentSettings.AutoSaveData = autoSaveBool;
-            }
-
-            // Load auto-save interval
-            if (_localSettings.Values.TryGetValue(AUTO_SAVE_INTERVAL_KEY, out object intervalValue) && 
-                intervalValue is int intervalInt)
-            {
-                _currentSettings.AutoSaveIntervalMinutes = intervalInt;
+                _localSettings.Values[NOTIFICATIONS_SETTING_KEY] = value;
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Notifications {(value ? "enabled" : "disabled")}");
             }
         }
 
         /// <summary>
-        /// Saves the current settings to ApplicationDataContainer.
-        /// Uses JSON serialization for the complete settings object.
+        /// Gets or sets whether auto-save is enabled
         /// </summary>
-        /// <remarks>
-        /// This method saves settings both as a complete JSON object (for future loads)
-        /// and as individual values (for backward compatibility and cross-platform access).
-        /// The ApplicationDataContainer automatically handles persistence.
-        /// </remarks>
-        public void SaveSettings()
+        public bool AutoSaveEnabled
         {
-            if (_currentSettings == null)
-                return;
-
-            try
+            get
             {
-                // Save complete settings as JSON
-                string settingsJson = JsonConvert.SerializeObject(_currentSettings, Formatting.Indented);
-                _localSettings.Values[SETTINGS_KEY] = settingsJson;
-
-                // Also save individual values for backward compatibility and easier access
-                _localSettings.Values[THEME_KEY] = (int)_currentSettings.CurrentTheme;
-                _localSettings.Values[LAST_CUSTOMER_KEY] = _currentSettings.LastSelectedCustomerId ?? string.Empty;
-                _localSettings.Values[LAST_LAUNCH_KEY] = _currentSettings.LastAppLaunch.ToString("O"); // ISO 8601 format
-                _localSettings.Values[FIRST_RUN_KEY] = _currentSettings.IsFirstRun;
-                _localSettings.Values[NOTIFICATIONS_KEY] = _currentSettings.EnableNotifications;
-                _localSettings.Values[AUTO_SAVE_KEY] = _currentSettings.AutoSaveData;
-                _localSettings.Values[AUTO_SAVE_INTERVAL_KEY] = _currentSettings.AutoSaveIntervalMinutes;
-
-                System.Diagnostics.Debug.WriteLine("SettingsService: Settings saved successfully");
+                var value = _localSettings.Values[AUTOSAVE_SETTING_KEY];
+                return value != null ? (bool)value : true; // Default: enabled
             }
-            catch (Exception ex)
+            set
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error saving settings: {ex.Message}");
+                _localSettings.Values[AUTOSAVE_SETTING_KEY] = value;
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Auto-save {(value ? "enabled" : "disabled")}");
             }
         }
 
@@ -347,288 +115,448 @@ namespace UWP_Demo.Services
         #region Theme Management
 
         /// <summary>
-        /// Applies the specified theme to the current application window.
-        /// This method updates the visual appearance of all UI elements.
+        /// Event raised when theme changes
         /// </summary>
-        /// <param name="theme">The theme to apply</param>
-        /// <remarks>
-        /// This method immediately applies the theme to the current window.
-        /// The theme change affects all UI elements that use theme-aware resources.
-        /// Custom controls may need to respond to the ThemeChanged event for updates.
-        /// </remarks>
-        /// <example>
-        /// // Apply dark theme immediately
-        /// SettingsService.Instance.ApplyTheme(ElementTheme.Dark);
-        /// </example>
+        public event EventHandler<ElementTheme> ThemeChanged;
+
+        /// <summary>
+        /// Apply the specified theme to the current window
+        /// </summary>
+        /// <param name="theme">Theme to apply</param>
         public void ApplyTheme(ElementTheme theme)
         {
             try
             {
-                // Apply theme to the current window's content
+                // THEME PERSISTENCE: Apply loaded/saved theme to the UI
                 if (Window.Current?.Content is FrameworkElement rootElement)
                 {
                     rootElement.RequestedTheme = theme;
-                    System.Diagnostics.Debug.WriteLine($"SettingsService: Applied theme: {theme}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("SettingsService: No window content available for theme application");
+                    System.Diagnostics.Debug.WriteLine($"SettingsService: Applied theme {theme} to window");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error applying theme: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Error applying theme - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Toggles between Light and Dark themes.
-        /// If currently using Default, switches to Dark theme.
+        /// Toggle between Light and Dark themes
         /// </summary>
-        /// <remarks>
-        /// This method provides a convenient way to implement theme toggle buttons.
-        /// It automatically saves the new theme setting and applies it immediately.
-        /// </remarks>
-        /// <example>
-        /// // Toggle theme on button click
-        /// SettingsService.Instance.ToggleTheme();
-        /// </example>
         public void ToggleTheme()
         {
-            ElementTheme newTheme = CurrentTheme switch
-            {
-                ElementTheme.Light => ElementTheme.Dark,
-                ElementTheme.Dark => ElementTheme.Light,
-                ElementTheme.Default => ElementTheme.Dark,
-                _ => ElementTheme.Light
-            };
-
-            CurrentTheme = newTheme;
+            // THEME PERSISTENCE: Toggle theme and automatically save via CurrentTheme setter
+            CurrentTheme = CurrentTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
         }
 
         /// <summary>
-        /// Cycles through all available themes: Default -> Light -> Dark -> Default.
-        /// This provides an alternative to toggle for applications with three theme options.
+        /// Initialize theme on app startup
         /// </summary>
-        public void CycleTheme()
+        public void InitializeTheme()
         {
-            ElementTheme newTheme = CurrentTheme switch
-            {
-                ElementTheme.Default => ElementTheme.Light,
-                ElementTheme.Light => ElementTheme.Dark,
-                ElementTheme.Dark => ElementTheme.Default,
-                _ => ElementTheme.Default
-            };
-
-            CurrentTheme = newTheme;
+            // THEME PERSISTENCE: Load and apply saved theme on app startup
+            ApplyTheme(CurrentTheme);
+            System.Diagnostics.Debug.WriteLine($"SettingsService: Initialized with theme {CurrentTheme}");
         }
 
         #endregion
 
-        #region App Lifecycle Methods
+        #region Helper Methods
 
         /// <summary>
-        /// Updates the last app launch timestamp and handles first-run logic.
-        /// This should be called during application startup.
+        /// Get a friendly name for the current theme
         /// </summary>
-        /// <remarks>
-        /// This method:
-        /// - Updates the last launch timestamp for "welcome back" messages
-        /// - Marks the app as no longer first-run after the initial launch
-        /// - Automatically saves the updated settings
-        /// </remarks>
-        /// <example>
-        /// // In App.xaml.cs OnLaunched method
-        /// SettingsService.Instance.UpdateAppLaunchTime();
-        /// </example>
-        public void UpdateAppLaunchTime()
+        public string GetThemeName()
         {
-            try
+            // C# 7.3 compatible switch statement
+            switch (CurrentTheme)
             {
-                var settings = CurrentSettings;
-                settings.UpdateLastLaunchTime();
-                SaveSettings();
-                
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Updated app launch time. First run: {settings.IsFirstRun}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error updating launch time: {ex.Message}");
+                case ElementTheme.Light:
+                    return "Light";
+                case ElementTheme.Dark:
+                    return "Dark";
+                case ElementTheme.Default:
+                    return "System Default";
+                default:
+                    return "Unknown";
             }
         }
 
         /// <summary>
-        /// Gets a welcome message based on the app usage history.
-        /// Returns different messages for first-time users vs. returning users.
+        /// Reset all settings to defaults
         /// </summary>
-        /// <returns>A personalized welcome message</returns>
-        /// <example>
-        /// // Display welcome message in the UI
-        /// string welcomeMessage = SettingsService.Instance.GetWelcomeMessage();
-        /// WelcomeTextBlock.Text = welcomeMessage;
-        /// </example>
-        public string GetWelcomeMessage()
+        public void ResetToDefaults()
         {
-            var settings = CurrentSettings;
+            // THEME PERSISTENCE: Reset theme to default and save
+            CurrentTheme = ElementTheme.Default;
+            NotificationsEnabled = true;
+            AutoSaveEnabled = true;
             
-            if (settings.IsFirstRun)
+            System.Diagnostics.Debug.WriteLine("SettingsService: Reset all settings to defaults");
+        }
+
+        /// <summary>
+        /// Get summary of current settings for debugging
+        /// </summary>
+        public string GetSettingsSummary()
+        {
+            return $"Theme: {GetThemeName()}, Notifications: {NotificationsEnabled}, AutoSave: {AutoSaveEnabled}";
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// SUSPENSION & RESUME: Service for managing application suspension and resume state
+    /// Handles app lifecycle events, saves timestamps, and manages welcome back messages
+    /// Uses ApplicationDataContainer for persistent storage across app sessions
+    /// </summary>
+    public class SuspensionService
+    {
+        private static SuspensionService _instance;
+        
+        // SUSPENSION & RESUME: Reference to local settings storage for suspension state
+        private readonly ApplicationDataContainer _localSettings;
+
+        // SUSPENSION & RESUME: Setting keys for suspension state storage
+        private const string LAST_SUSPENSION_TIME_KEY = "LastSuspensionTime";
+        private const string LAST_RESUME_TIME_KEY = "LastResumeTime";
+        private const string APP_LAUNCH_COUNT_KEY = "AppLaunchCount";
+        private const string CURRENT_PAGE_KEY = "CurrentPage";
+        private const string CUSTOMER_COUNT_KEY = "CustomerCountOnSuspension";
+        private const string WAS_SUSPENDED_KEY = "WasSuspended";
+
+        public static SuspensionService Instance => _instance ?? (_instance = new SuspensionService());
+
+        private SuspensionService()
+        {
+            // SUSPENSION & RESUME: Get reference to local settings container for suspension state
+            _localSettings = ApplicationData.Current.LocalSettings;
+        }
+
+        #region Suspension State Properties
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets the timestamp when app was last suspended
+        /// </summary>
+        public DateTime? LastSuspensionTime
+        {
+            get
             {
-                return "Welcome to UWP Demo! This app showcases modern Windows development features.";
+                var value = _localSettings.Values[LAST_SUSPENSION_TIME_KEY];
+                if (value != null && DateTime.TryParse(value.ToString(), out DateTime time))
+                {
+                    return time;
+                }
+                return null;
             }
-            else
+            private set
             {
-                var timeSinceLastLaunch = settings.TimeSinceLastLaunch;
-                
-                if (timeSinceLastLaunch.TotalDays >= 7)
+                if (value.HasValue)
                 {
-                    return $"Welcome back! It's been {(int)timeSinceLastLaunch.TotalDays} days since your last visit.";
-                }
-                else if (timeSinceLastLaunch.TotalDays >= 1)
-                {
-                    return $"Welcome back! You last used the app {(int)timeSinceLastLaunch.TotalDays} day(s) ago.";
-                }
-                else if (timeSinceLastLaunch.TotalHours >= 1)
-                {
-                    return $"Welcome back! You last used the app {(int)timeSinceLastLaunch.TotalHours} hour(s) ago.";
+                    _localSettings.Values[LAST_SUSPENSION_TIME_KEY] = value.Value.ToString("O"); // ISO 8601 format
                 }
                 else
                 {
-                    return "Welcome back!";
+                    _localSettings.Values.Remove(LAST_SUSPENSION_TIME_KEY);
                 }
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets the timestamp when app was last resumed
+        /// </summary>
+        public DateTime? LastResumeTime
+        {
+            get
+            {
+                var value = _localSettings.Values[LAST_RESUME_TIME_KEY];
+                if (value != null && DateTime.TryParse(value.ToString(), out DateTime time))
+                {
+                    return time;
+                }
+                return null;
+            }
+            private set
+            {
+                if (value.HasValue)
+                {
+                    _localSettings.Values[LAST_RESUME_TIME_KEY] = value.Value.ToString("O");
+                }
+                else
+                {
+                    _localSettings.Values.Remove(LAST_RESUME_TIME_KEY);
+                }
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets the number of times the app has been launched
+        /// </summary>
+        public int AppLaunchCount
+        {
+            get
+            {
+                var value = _localSettings.Values[APP_LAUNCH_COUNT_KEY];
+                return value != null ? (int)value : 0;
+            }
+            private set
+            {
+                _localSettings.Values[APP_LAUNCH_COUNT_KEY] = value;
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets the current page name for state restoration
+        /// </summary>
+        public string CurrentPage
+        {
+            get
+            {
+                var value = _localSettings.Values[CURRENT_PAGE_KEY];
+                return value?.ToString() ?? "HomePage";
+            }
+            set
+            {
+                _localSettings.Values[CURRENT_PAGE_KEY] = value ?? "HomePage";
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets the customer count when app was suspended
+        /// </summary>
+        public int CustomerCountOnSuspension
+        {
+            get
+            {
+                var value = _localSettings.Values[CUSTOMER_COUNT_KEY];
+                return value != null ? (int)value : 0;
+            }
+            set
+            {
+                _localSettings.Values[CUSTOMER_COUNT_KEY] = value;
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Gets or sets whether the app was previously suspended
+        /// </summary>
+        public bool WasSuspended
+        {
+            get
+            {
+                var value = _localSettings.Values[WAS_SUSPENDED_KEY];
+                return value != null ? (bool)value : false;
+            }
+            private set
+            {
+                _localSettings.Values[WAS_SUSPENDED_KEY] = value;
             }
         }
 
         #endregion
 
-        #region State Management
+        #region Suspension & Resume Operations
 
         /// <summary>
-        /// Stores the ID of the currently selected customer for state restoration.
-        /// This allows the app to restore the user's selection after suspension/resume.
+        /// SUSPENSION & RESUME: Save app state when suspending
+        /// Records timestamp, current page, and app data for restoration
         /// </summary>
-        /// <param name="customerId">The ID of the selected customer</param>
-        /// <example>
-        /// // Save selection when customer is selected
-        /// SettingsService.Instance.SetSelectedCustomerId(customer.Id.ToString());
-        /// </example>
-        public void SetSelectedCustomerId(string customerId)
+        public void SaveSuspensionState(string currentPage = null, int customerCount = 0)
         {
             try
             {
-                CurrentSettings.LastSelectedCustomerId = customerId ?? string.Empty;
-                SaveSettings();
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Saving suspension state...");
+
+                // SUSPENSION & RESUME: Record suspension timestamp
+                LastSuspensionTime = DateTime.Now;
+                WasSuspended = true;
+
+                // SUSPENSION & RESUME: Save current app state
+                if (!string.IsNullOrEmpty(currentPage))
+                {
+                    CurrentPage = currentPage;
+                }
+                CustomerCountOnSuspension = customerCount;
+
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: State saved - Page: {CurrentPage}, Customers: {customerCount}, Time: {LastSuspensionTime}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error setting selected customer ID: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to save suspension state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Gets the ID of the last selected customer for state restoration.
+        /// SUSPENSION & RESUME: Handle app resuming from suspension
+        /// Records resume timestamp and prepares welcome back message
         /// </summary>
-        /// <returns>The customer ID, or null if none was selected</returns>
-        /// <example>
-        /// // Restore selection on app startup
-        /// string lastCustomerId = SettingsService.Instance.GetSelectedCustomerId();
-        /// if (!string.IsNullOrEmpty(lastCustomerId))
-        /// {
-        ///     RestoreCustomerSelection(lastCustomerId);
-        /// }
-        /// </example>
-        public string GetSelectedCustomerId()
-        {
-            return CurrentSettings.LastSelectedCustomerId;
-        }
-
-        /// <summary>
-        /// Clears the stored customer selection.
-        /// Useful when the customer list is cleared or the selection is no longer valid.
-        /// </summary>
-        public void ClearSelectedCustomerId()
-        {
-            SetSelectedCustomerId(null);
-        }
-
-        #endregion
-
-        #region Settings Reset and Management
-
-        /// <summary>
-        /// Resets all settings to their default values.
-        /// This can be used for a "Reset to Defaults" feature in the settings UI.
-        /// </summary>
-        /// <param name="preserveAppHistory">
-        /// If true, preserves app launch history and first-run status.
-        /// If false, resets everything including usage history.
-        /// </param>
-        /// <example>
-        /// // Reset user preferences but keep usage history
-        /// SettingsService.Instance.ResetToDefaults(preserveAppHistory: true);
-        /// </example>
-        public void ResetToDefaults(bool preserveAppHistory = true)
+        public void HandleResume()
         {
             try
             {
-                var oldSettings = CurrentSettings;
-                var newSettings = new AppSettings();
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Handling app resume...");
 
-                if (preserveAppHistory)
+                // SUSPENSION & RESUME: Record resume timestamp
+                LastResumeTime = DateTime.Now;
+
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: App resumed at {LastResumeTime}");
+
+                // SUSPENSION & RESUME: Calculate time away if we have suspension time
+                if (LastSuspensionTime.HasValue && LastResumeTime.HasValue)
                 {
-                    // Keep historical data
-                    newSettings.LastAppLaunch = oldSettings.LastAppLaunch;
-                    newSettings.IsFirstRun = oldSettings.IsFirstRun;
+                    var timeAway = LastResumeTime.Value - LastSuspensionTime.Value;
+                    System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Time away: {timeAway}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to handle resume - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Handle app launch (fresh start or resume)
+        /// Increments launch count and determines if this is a resume scenario
+        /// </summary>
+        public void HandleLaunch()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Handling app launch...");
+
+                // SUSPENSION & RESUME: Increment launch counter
+                AppLaunchCount++;
+
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Launch #{AppLaunchCount}, Was previously suspended: {WasSuspended}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to handle launch - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Get welcome back message based on suspension state
+        /// Enhanced with seconds-based counting for precise testing
+        /// </summary>
+        public string GetWelcomeBackMessage()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Getting welcome message - WasSuspended: {WasSuspended}, LastSuspensionTime: {LastSuspensionTime}");
+
+                // SUSPENSION & RESUME: Always show welcome message on first launch
+                if (AppLaunchCount == 1)
+                {
+                    return $"?? Welcome to Customer Management! (First time launch)";
                 }
 
-                CurrentSettings = newSettings;
-                
-                // Apply the default theme
-                ApplyTheme(newSettings.CurrentTheme);
-                
-                System.Diagnostics.Debug.WriteLine("SettingsService: Reset settings to defaults");
+                // SUSPENSION & RESUME: Show launch count if no suspension data
+                if (!WasSuspended || !LastSuspensionTime.HasValue)
+                {
+                    return $"?? Welcome back to Customer Management! (Launch #{AppLaunchCount})";
+                }
+
+                // SUSPENSION & RESUME: Calculate time away with precise seconds counting
+                var timeAway = DateTime.Now - LastSuspensionTime.Value;
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Time away calculated: {timeAway}");
+
+                // SUSPENSION & RESUME: Enhanced time formatting with seconds precision
+                if (timeAway.TotalSeconds < 10)
+                {
+                    return $"? Welcome back! You were away for {timeAway.Seconds} second(s). (Quick return!)";
+                }
+                else if (timeAway.TotalSeconds < 60)
+                {
+                    return $"?? Welcome back! You were away for {(int)timeAway.TotalSeconds} second(s).";
+                }
+                else if (timeAway.TotalMinutes < 1)
+                {
+                    return $"?? Welcome back! You were away for {timeAway.Seconds} second(s).";
+                }
+                else if (timeAway.TotalMinutes < 60)
+                {
+                    return $"? Welcome back! You were away for {(int)timeAway.TotalMinutes} minute(s) and {timeAway.Seconds} second(s).";
+                }
+                else if (timeAway.TotalHours < 24)
+                {
+                    return $"?? Welcome back! You were away for {(int)timeAway.TotalHours} hour(s), {timeAway.Minutes} minute(s), and {timeAway.Seconds} second(s).";
+                }
+                else
+                {
+                    return $"?? Welcome back! You were away for {timeAway.Days} day(s), {timeAway.Hours} hour(s), {timeAway.Minutes} minute(s), and {timeAway.Seconds} second(s).";
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error resetting settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to get welcome message - {ex.Message}");
+                return "?? Welcome back to Customer Management!";
             }
         }
 
         /// <summary>
-        /// Updates a specific setting value without affecting other settings.
-        /// This method provides type-safe access to individual settings.
+        /// SUSPENSION & RESUME: Get suspension state summary for debugging with seconds precision
         /// </summary>
-        /// <typeparam name="T">The type of the setting value</typeparam>
-        /// <param name="settingName">The name of the setting to update</param>
-        /// <param name="value">The new value for the setting</param>
-        /// <returns>True if the setting was updated successfully</returns>
-        /// <example>
-        /// // Update auto-save interval
-        /// SettingsService.Instance.UpdateSetting("AutoSaveIntervalMinutes", 10);
-        /// </example>
-        public bool UpdateSetting<T>(string settingName, T value)
+        public string GetSuspensionSummary()
         {
             try
             {
-                var settings = CurrentSettings;
-                var property = typeof(AppSettings).GetProperty(settingName);
-                
-                if (property != null && property.CanWrite && property.PropertyType == typeof(T))
+                var summary = $"Launches: {AppLaunchCount}, " +
+                       $"Last Suspended: {LastSuspensionTime?.ToString("MM/dd/yyyy HH:mm:ss") ?? "Never"}, " +
+                       $"Last Resumed: {LastResumeTime?.ToString("MM/dd/yyyy HH:mm:ss") ?? "Never"}, " +
+                       $"Was Suspended: {WasSuspended}, " +
+                       $"Page: {CurrentPage}, " +
+                       $"Customers: {CustomerCountOnSuspension}";
+
+                // SUSPENSION & RESUME: Add time away calculation if available
+                if (LastSuspensionTime.HasValue && LastResumeTime.HasValue)
                 {
-                    property.SetValue(settings, value);
-                    SaveSettings();
-                    return true;
+                    var timeAway = LastResumeTime.Value - LastSuspensionTime.Value;
+                    summary += $", Time Away: {timeAway.Days}d {timeAway.Hours}h {timeAway.Minutes}m {timeAway.Seconds}s";
                 }
-                
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Setting '{settingName}' not found or type mismatch");
-                return false;
+
+                return summary;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error updating setting '{settingName}': {ex.Message}");
-                return false;
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to get summary - {ex.Message}");
+                return "Suspension state unavailable";
             }
         }
 
+        /// <summary>
+        /// SUSPENSION & RESUME: Clear suspension flag after successful resume
+        /// Modified to delay clearing for testing purposes
+        /// </summary>
+        public void ClearSuspensionFlag()
+        {
+            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Clearing suspension flag after welcome message shown");
+            WasSuspended = false;
+        }
+
+        /// <summary>
+        /// SUSPENSION & RESUME: Force suspension state for testing purposes
+        /// Useful for debugging welcome message functionality
+        /// </summary>
+        public void SetTestSuspensionState(int secondsAgo = 30)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Setting test suspension state ({secondsAgo} seconds ago)");
+
+                LastSuspensionTime = DateTime.Now.AddSeconds(-secondsAgo);
+                WasSuspended = true;
+                CurrentPage = "HomePage";
+                CustomerCountOnSuspension = 5;
+
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Test state set - suspended {secondsAgo} seconds ago");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to set test state - {ex.Message}");
+            }
+        }
         #endregion
     }
 }

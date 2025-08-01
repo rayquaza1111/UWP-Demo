@@ -1,14 +1,21 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
+// FILE I/O: JSON serialization support for file persistence
+using Newtonsoft.Json;  // FILE I/O: Enables automatic conversion between Customer objects and JSON for file storage
 
 namespace UWP_Demo.Models
 {
     /// <summary>
-    /// Represents a customer entity in the customer management system.
+    /// FILE I/O: Customer entity designed for file persistence using JSON serialization
     /// This class implements INotifyPropertyChanged to support data binding in XAML UI.
     /// The customer data can be serialized to/from JSON for file storage and network operations.
+    /// 
+    /// FILE I/O DESIGN:
+    /// - All properties have [JsonProperty] attributes to control JSON field names
+    /// - [JsonIgnore] on computed properties that shouldn't be saved to file
+    /// - Automatic timestamp tracking for file audit trail
+    /// - Parameterless constructor for JSON deserialization
     /// </summary>
     /// <remarks>
     /// This model demonstrates:
@@ -32,13 +39,13 @@ namespace UWP_Demo.Models
 
         #endregion
 
-        #region Public Properties
+        #region FILE I/O: Properties with JSON Serialization Support
 
         /// <summary>
-        /// Gets or sets the unique identifier for the customer.
+        /// FILE I/O: Unique identifier for the customer - saved to JSON file
         /// This ID is used for database operations and customer lookup.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonProperty("id")]  // FILE I/O: Maps to "id" field in JSON file
         public int Id
         {
             get => _id;
@@ -46,10 +53,10 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
-        /// Gets or sets the customer's first name.
+        /// FILE I/O: Customer's first name - saved to JSON file
         /// This field is required and cannot be null or empty.
         /// </summary>
-        [JsonProperty("firstName")]
+        [JsonProperty("firstName")]  // FILE I/O: Maps to "firstName" field in JSON file
         public string FirstName
         {
             get => _firstName;
@@ -57,10 +64,10 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
-        /// Gets or sets the customer's last name.
+        /// FILE I/O: Customer's last name - saved to JSON file
         /// This field is required and cannot be null or empty.
         /// </summary>
-        [JsonProperty("lastName")]
+        [JsonProperty("lastName")]  // FILE I/O: Maps to "lastName" field in JSON file
         public string LastName
         {
             get => _lastName;
@@ -68,17 +75,18 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
+        /// FILE I/O: Computed property - NOT saved to JSON file
         /// Gets the customer's full name by combining first and last names.
         /// This is a computed property that automatically updates when either name changes.
         /// </summary>
-        [JsonIgnore]
+        [JsonIgnore]  // FILE I/O: Exclude from JSON - computed at runtime
         public string FullName => $"{FirstName} {LastName}".Trim();
 
         /// <summary>
-        /// Gets or sets the customer's email address.
+        /// FILE I/O: Customer's email address - saved to JSON file
         /// This should be validated for proper email format in the UI layer.
         /// </summary>
-        [JsonProperty("email")]
+        [JsonProperty("email")]  // FILE I/O: Maps to "email" field in JSON file
         public string Email
         {
             get => _email;
@@ -86,10 +94,10 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
-        /// Gets or sets the customer's phone number.
+        /// FILE I/O: Customer's phone number - saved to JSON file
         /// This field is optional but should be validated for proper format when provided.
         /// </summary>
-        [JsonProperty("phone")]
+        [JsonProperty("phone")]  // FILE I/O: Maps to "phone" field in JSON file
         public string Phone
         {
             get => _phone;
@@ -97,10 +105,10 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
-        /// Gets or sets the customer's company name.
+        /// FILE I/O: Customer's company name - saved to JSON file
         /// This field is optional and can be used for business customers.
         /// </summary>
-        [JsonProperty("company")]
+        [JsonProperty("company")]  // FILE I/O: Maps to "company" field in JSON file
         public string Company
         {
             get => _company;
@@ -108,10 +116,11 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
+        /// FILE I/O: Creation timestamp - saved to JSON file for audit trail
         /// Gets or sets the date when the customer record was created.
         /// This is automatically set when a new customer is created.
         /// </summary>
-        [JsonProperty("dateCreated")]
+        [JsonProperty("dateCreated")]  // FILE I/O: Maps to "dateCreated" field in JSON file
         public DateTime DateCreated
         {
             get => _dateCreated;
@@ -119,10 +128,11 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
+        /// FILE I/O: Modification timestamp - saved to JSON file for audit trail
         /// Gets or sets the date when the customer record was last modified.
         /// This is automatically updated whenever the customer data changes.
         /// </summary>
-        [JsonProperty("lastModified")]
+        [JsonProperty("lastModified")]  // FILE I/O: Maps to "lastModified" field in JSON file
         public DateTime LastModified
         {
             get => _lastModified;
@@ -131,19 +141,21 @@ namespace UWP_Demo.Models
 
         #endregion
 
-        #region Constructor
+        #region FILE I/O: Constructors for JSON Serialization
 
         /// <summary>
+        /// FILE I/O: Parameterless constructor required for JSON deserialization
         /// Initializes a new instance of the Customer class.
         /// Sets default values for creation and modification dates.
+        /// This constructor is called when loading customers from JSON file.
         /// </summary>
         public Customer()
         {
-            // Initialize dates to current time when creating a new customer
+            // FILE I/O: Initialize dates to current time when creating a new customer
             DateCreated = DateTime.Now;
             LastModified = DateTime.Now;
             
-            // Initialize string properties to empty strings to avoid null reference issues
+            // FILE I/O: Initialize string properties to empty strings to avoid null reference issues
             FirstName = string.Empty;
             LastName = string.Empty;
             Email = string.Empty;
@@ -152,6 +164,7 @@ namespace UWP_Demo.Models
         }
 
         /// <summary>
+        /// FILE I/O: Convenience constructor for creating customers programmatically
         /// Initializes a new instance of the Customer class with specified details.
         /// </summary>
         /// <param name="firstName">The customer's first name</param>
@@ -215,8 +228,10 @@ namespace UWP_Demo.Models
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        /// FILE I/O: Property setter with automatic timestamp tracking
         /// Sets the property value and raises PropertyChanged event if the value actually changed.
         /// This method ensures that UI controls are automatically updated when data changes.
+        /// Also automatically updates LastModified timestamp for file audit trail.
         /// </summary>
         /// <typeparam name="T">The type of the property being set</typeparam>
         /// <param name="field">Reference to the backing field</param>
@@ -231,11 +246,12 @@ namespace UWP_Demo.Models
 
             field = value;
             
-            // Update the LastModified timestamp whenever any property changes
+            // FILE I/O: Update the LastModified timestamp whenever any property changes
+            // This creates an audit trail in the JSON file showing when data was last changed
             if (propertyName != nameof(LastModified))
             {
                 _lastModified = DateTime.Now;
-                OnPropertyChanged(nameof(LastModified));
+                OnPropertyChanged(nameof(LastModified));  // FILE I/O: Notify UI of timestamp change
             }
             
             // Notify that this property changed

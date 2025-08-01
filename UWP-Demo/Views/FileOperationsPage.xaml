@@ -1,0 +1,265 @@
+<Page
+    x:Class="UWP_Demo.Views.FileOperationsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_Demo.Views"
+    xmlns:viewmodels="using:UWP_Demo.ViewModels"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <!-- ?? FILE OPERATIONS: Dedicated file management and data operations -->
+    <!-- ?? Purpose: Import, export, backup, and manage customer data files -->
+    <!-- ?? Features: File operations, data migration, backup management -->
+    <Page.DataContext>
+        <viewmodels:HomeViewModel />
+    </Page.DataContext>
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
+            
+            <!-- ?? FILE OPERATIONS: Modern header -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            CornerRadius="6"
+                            Width="40"
+                            Height="40">
+                        <SymbolIcon Symbol="Folder" 
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="File Operations" 
+                                   FontSize="28" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Import, export, and manage customer data files" 
+                                   FontSize="14" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ?? FILE STATUS: Current file information -->
+            <muxc:InfoBar Title="Database Status"
+                          Message="{Binding FileStatus}"
+                          Severity="{Binding InfoBarSeverity}"
+                          IsOpen="True"
+                          IsClosable="False">
+                <muxc:InfoBar.ActionButton>
+                    <Button Content="View Details"
+                            Command="{Binding ShowFileInfoCommand}"
+                            Style="{ThemeResource AccentButtonStyle}" />
+                </muxc:InfoBar.ActionButton>
+            </muxc:InfoBar>
+
+            <!-- ?? IMPORT OPERATIONS -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE896;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Import Data" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Text="Import customer data from external sources or restore from backups."
+                               TextWrapping="Wrap"
+                               Margin="32,0,0,16" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="32,0,0,0">
+                        <Button Command="{Binding LoadExternalDataCommand}"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Padding="16,12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Download" />
+                                <TextBlock Text="Load Sample Data" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8E5;" />
+                                <TextBlock Text="Import CSV" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8A5;" />
+                                <TextBlock Text="Import JSON" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? EXPORT OPERATIONS -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE898;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Export Data" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Text="Export customer data to various formats for backup or migration."
+                               TextWrapping="Wrap"
+                               Margin="32,0,0,16" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="32,0,0,0">
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8E5;" />
+                                <TextBlock Text="Export to CSV" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8A5;" />
+                                <TextBlock Text="Export to JSON" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8DF;" />
+                                <TextBlock Text="Export to Excel" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? BACKUP OPERATIONS -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8C8;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Backup &amp; Restore" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Text="Create backups of your customer database and restore from previous backups."
+                               TextWrapping="Wrap"
+                               Margin="32,0,0,16" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="32,0,0,0">
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Save" />
+                                <TextBlock Text="Create Backup" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE777;" />
+                                <TextBlock Text="Restore Backup" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8B7;" />
+                                <TextBlock Text="Schedule Backup" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? DATABASE OPERATIONS -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE950;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Database Management" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Text="Manage and maintain your customer database with advanced operations."
+                               TextWrapping="Wrap"
+                               Margin="32,0,0,16" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="32,0,0,0">
+                        <Button Command="{Binding RefreshCommand}"
+                                Padding="16,12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Reload Database" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8E4;" />
+                                <TextBlock Text="Optimize Database" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Padding="16,12" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74C;" />
+                                <TextBlock Text="Clear All Data" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? COMING SOON -->
+            <muxc:InfoBar Title="Advanced Features Coming Soon"
+                          Message="Additional file operations like cloud sync, advanced import/export formats, and automated backups are being developed."
+                          Severity="Informational"
+                          IsOpen="True"
+                          IsClosable="True">
+                <muxc:InfoBar.IconSource>
+                    <muxc:SymbolIconSource Symbol="Folder" />
+                </muxc:InfoBar.IconSource>
+            </muxc:InfoBar>
+            
+        </StackPanel>
+    </ScrollViewer>
+</Page>

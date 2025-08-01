@@ -1,856 +1,556 @@
-using System;
-using System.Diagnostics;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Controls;
-using UWP_Demo.Services;
-using UWP_Demo.Helpers;
+﻿using Windows.UI.Xaml.Controls;
 using UWP_Demo.Views;
+// 🎨 WINUI 2 UI ENHANCEMENT: Import WinUI 2 controls namespace
+using Microsoft.UI.Xaml.Controls;  // 🎯 WINUI 2: Provides NavigationView and other modern controls
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Navigation;  // 🔄 SUSPENSION & RESUME: For NavigationEventArgs
+using System;
+using System.Collections.Generic;
+using UWP_Demo.Models;  // 🚀 NAVIGATION: Import Customer model for navigation methods
 
 namespace UWP_Demo
 {
     /// <summary>
-    /// The main page of the application that serves as the application shell.
-    /// This page hosts the NavigationView and manages navigation between different sections
-    /// of the application including Home, Edit, Settings, and other feature pages.
+    /// 🚀 NAVIGATION SYSTEM: MainPage with comprehensive multi-page NavigationView
+    /// 📱 Features: Advanced navigation, breadcrumb, search, responsive design
+    /// 🎯 Pages: Home, Customers, Edit, Settings, File Operations, Reports, Help, About
     /// </summary>
-    /// <remarks>
-    /// This page demonstrates several key UWP concepts:
-    /// - NavigationView implementation for modern Windows app navigation
-    /// - Frame-based navigation between pages
-    /// - Theme management with real-time switching
-    /// - Network status monitoring and display
-    /// - Global error handling and user feedback
-    /// - Responsive design adaptation
-    /// - Integration with application services
-    /// 
-    /// The MainPage acts as the application shell and coordinates navigation
-    /// while also providing global UI elements like theme toggles, status indicators,
-    /// and error notifications that are available across all pages.
-    /// </remarks>
     public sealed partial class MainPage : Page
     {
-        #region Private Fields
+        // 🚀 NAVIGATION: Enhanced properties for navigation management
+        private string _currentPageTitle = "Customer Management";
+        public string CurrentPageTitle 
+        { 
+            get => _currentPageTitle;
+            set
+            {
+                _currentPageTitle = value;
+                Bindings.Update();
+                UpdateBreadcrumb();
+            }
+        }
 
-        /// <summary>
-        /// Reference to the settings service for theme management and preferences.
-        /// </summary>
-        private readonly SettingsService _settingsService;
+        // 🔄 SUSPENSION & RESUME: Properties to track app launch state
+        public bool WasResumedFromSuspension { get; private set; } = false;
+        public string LaunchInformation { get; private set; } = "";
 
-        /// <summary>
-        /// Reference to the network service for connectivity monitoring.
-        /// </summary>
-        private readonly NetworkService _networkService;
+        // 🚀 NAVIGATION: Page type mapping for navigation
+        private readonly Dictionary<string, Type> _pageTypeMap = new Dictionary<string, Type>
+        {
+            { "home", typeof(HomePage) },
+            { "customers", typeof(CustomersPage) }, // ✅ NOW: Dedicated customer page
+            { "edit", typeof(EditPage) },
+            { "fileops", typeof(FileOperationsPage) }, // ✅ NOW: Dedicated file operations page
+            { "reports", typeof(ReportsPage) },
+            { "mobile", typeof(MobilePage) },
+            { "help", typeof(HelpPage) },
+            { "about", typeof(AboutPage) }
+        };
 
-        /// <summary>
-        /// Timer for periodic network status updates.
-        /// This ensures the network status indicator stays current.
-        /// </summary>
-        private DispatcherTimer _networkStatusTimer;
+        // 🚀 NAVIGATION: Page title mapping
+        private readonly Dictionary<string, string> _pageTitleMap = new Dictionary<string, string>
+        {
+            { "home", "Home Dashboard" },
+            { "customers", "Customer Management" },
+            { "edit", "Customer Editor" },
+            { "fileops", "File Operations" },
+            { "reports", "Analytics & Reports" },
+            { "mobile", "Mobile Synchronization" },
+            { "help", "Help & Support" },
+            { "about", "About Customer Manager" }
+        };
 
-        /// <summary>
-        /// Flag to prevent recursive navigation calls during page setup.
-        /// </summary>
-        private bool _isNavigating = false;
+        // 🚀 NAVIGATION: Breadcrumb mapping
+        private readonly Dictionary<string, string> _breadcrumbMap = new Dictionary<string, string>
+        {
+            { "home", "Home" },
+            { "customers", "Home > Customers" },
+            { "edit", "Home > Customers > Edit" },
+            { "fileops", "Home > File Operations" },
+            { "reports", "Home > Reports" },
+            { "mobile", "Home > Mobile Sync" },
+            { "help", "Home > Help" },
+            { "about", "Home > About" }
+        };
 
-        #endregion
-
-        #region Constructor
-
-        /// <summary>
-        /// Initializes a new instance of the MainPage class.
-        /// Sets up the navigation structure and initializes UI components.
-        /// </summary>
         public MainPage()
         {
             this.InitializeComponent();
             
-            // Initialize service references
-            _settingsService = SettingsService.Instance;
-            _networkService = NetworkService.Instance;
+            System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION SYSTEM: MainPage with enhanced NavigationView initialized");
             
-            // Set up the page
-            InitializePage();
+            // 🚀 NAVIGATION: Navigate to HomePage when MainPage loads
+            NavigateToPage("home");
             
-            Debug.WriteLine("MainPage: Initialized successfully");
-        }
-
-        #endregion
-
-        #region Initialization
-
-        /// <summary>
-        /// Initializes the main page components and sets up event handlers.
-        /// This method configures the UI state and starts monitoring services.
-        /// </summary>
-        private void InitializePage()
-        {
-            try
-            {
-                // Set up navigation frame
-                SetupNavigationFrame();
-                
-                // Initialize UI state
-                UpdateThemeToggleButton();
-                UpdateNetworkStatus();
-                
-                // Set up periodic network status updates
-                SetupNetworkStatusTimer();
-                
-                // Subscribe to service events
-                SubscribeToServiceEvents();
-                
-                // Show welcome message if appropriate
-                ShowWelcomeMessage();
-                
-                Debug.WriteLine("MainPage: Page initialization completed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error during initialization: {ex.Message}");
-                ShowErrorMessage("Initialization Error", "There was a problem setting up the application. Some features may not work correctly.");
-            }
+            System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION SYSTEM: Initial navigation to HomePage completed");
         }
 
         /// <summary>
-        /// Sets up the navigation frame and default navigation behavior.
+        /// 🔄 SUSPENSION & RESUME: Handle navigation with suspension state parameter
+        /// 📊 Processes launch information and suspension state from App.xaml.cs
+        /// 🎯 Enables welcome message display based on app lifecycle events
         /// </summary>
-        private void SetupNavigationFrame()
-        {
-            try
-            {
-                // Configure the content frame for navigation
-                ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
-                
-                // Set up navigation helper if not already configured
-                if (NavigationHelper.RootFrame == null)
-                {
-                    NavigationHelper.RootFrame = ContentFrame;
-                    NavigationHelper.EnableNavigationEvents();
-                }
-                
-                Debug.WriteLine("MainPage: Navigation frame setup completed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error setting up navigation frame: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Sets up periodic network status monitoring.
-        /// This ensures the network status indicator stays current.
-        /// </summary>
-        private void SetupNetworkStatusTimer()
-        {
-            try
-            {
-                _networkStatusTimer = new DispatcherTimer();
-                _networkStatusTimer.Interval = TimeSpan.FromSeconds(30); // Check every 30 seconds
-                _networkStatusTimer.Tick += NetworkStatusTimer_Tick;
-                _networkStatusTimer.Start();
-                
-                Debug.WriteLine("MainPage: Network status timer started");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error setting up network status timer: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Subscribes to events from application services.
-        /// This allows the main page to respond to service state changes.
-        /// </summary>
-        private void SubscribeToServiceEvents()
-        {
-            try
-            {
-                // Subscribe to theme changes
-                _settingsService.ThemeChanged += SettingsService_ThemeChanged;
-                
-                // Subscribe to network operation events
-                _networkService.NetworkOperationCompleted += NetworkService_OperationCompleted;
-                
-                Debug.WriteLine("MainPage: Service event subscriptions completed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error subscribing to service events: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Page Lifecycle
-
-        /// <summary>
-        /// Called when the page is navigated to.
-        /// This method handles page activation and restoration of state.
-        /// </summary>
-        /// <param name="e">Navigation event arguments</param>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            
+
             try
             {
-                Debug.WriteLine("MainPage: Navigated to main page");
-                
-                // Navigate to the default page (Home) if no content is loaded
-                if (ContentFrame.Content == null && !_isNavigating)
+                // 🔄 SUSPENSION & RESUME: Check if we have suspension state information
+                if (e.Parameter != null)
                 {
-                    NavigateToPage("home");
+                    System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME: MainPage received parameter: {e.Parameter}");
+                    
+                    // 🔄 SUSPENSION & RESUME: Process launch information if available
+                    var launchInfo = e.Parameter.ToString();
+                    LaunchInformation = launchInfo;
+                    
+                    // 🔄 SUSPENSION & RESUME: Log the launch information
+                    System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME: Launch information: {LaunchInformation}");
                 }
-                
-                // Restore navigation selection if needed
-                RestoreNavigationSelection();
-                
-                // Update UI state
-                UpdateNetworkStatus();
-                UpdateBadges();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error in OnNavigatedTo: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME ERROR: Failed to process navigation parameter - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Called when the page is navigated away from.
-        /// This method handles cleanup and state preservation.
+        /// 🚀 NAVIGATION: Handle NavigationView selection changes
+        /// 🎯 Enhanced navigation logic with comprehensive page routing
+        /// 📱 Handles menu items, settings, and footer navigation
         /// </summary>
-        /// <param name="e">Navigation event arguments</param>
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            base.OnNavigatedFrom(e);
-            
-            try
-            {
-                Debug.WriteLine("MainPage: Navigated away from main page");
-                
-                // Save current state if needed
-                SaveNavigationState();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error in OnNavigatedFrom: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Navigation Event Handlers
-
-        /// <summary>
-        /// Handles navigation view selection changes.
-        /// This method navigates to the appropriate page based on user selection.
-        /// </summary>
-        /// <param name="sender">The NavigationView that raised the event</param>
-        /// <param name="args">Selection change event arguments</param>
         private void NavigationView_SelectionChanged(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs args)
         {
             try
             {
-                if (_isNavigating) return;
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: NavigationView selection changed");
                 
-                string selectedTag = null;
-                
-                // Handle settings selection
+                // 🚀 NAVIGATION: Handle built-in settings navigation
                 if (args.IsSettingsSelected)
                 {
-                    selectedTag = "settings";
+                    System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: Settings selected from NavigationView");
+                    NavigateToPage("settings");
                 }
-                // Handle menu item selection
+                // 🚀 NAVIGATION: Handle custom navigation menu items
                 else if (args.SelectedItem is Microsoft.UI.Xaml.Controls.NavigationViewItem selectedItem)
                 {
-                    selectedTag = selectedItem.Tag?.ToString();
-                }
-                
-                if (!string.IsNullOrEmpty(selectedTag))
-                {
-                    NavigateToPage(selectedTag);
-                    UpdatePageHeader(selectedTag);
+                    string tag = selectedItem.Tag?.ToString();
+                    System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION: Navigation item selected: {tag}");
+                    
+                    if (!string.IsNullOrEmpty(tag))
+                    {
+                        NavigateToPage(tag);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error in navigation selection: {ex.Message}");
-                ShowErrorMessage("Navigation Error", "Unable to navigate to the selected page.");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Navigation selection error: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Handles back button requests from the NavigationView.
-        /// This method implements back navigation behavior.
+        /// 🚀 NAVIGATION: Handle NavigationView back button requests
+        /// 🔄 Provides automatic back navigation functionality
+        /// 📱 Shows when user navigates deeper into the app hierarchy
         /// </summary>
-        /// <param name="sender">The NavigationView that raised the event</param>
-        /// <param name="args">Back request event arguments</param>
         private void NavigationView_BackRequested(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewBackRequestedEventArgs args)
         {
             try
             {
-                if (NavigationHelper.CanGoBack)
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: Back button requested");
+                
+                // 🚀 NAVIGATION: Navigate back if possible using Frame's navigation stack
+                if (ContentFrame.CanGoBack)
                 {
-                    NavigationHelper.GoBack();
-                    UpdateNavigationSelection();
+                    ContentFrame.GoBack();
+                    UpdateNavigationFromFrame();
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error in back navigation: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Back navigation error: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Handles navigation failures in the content frame.
-        /// This method provides error handling for page navigation issues.
+        /// 🚀 NAVIGATION: Handle frame navigation events
+        /// 📍 Updates NavigationView state based on frame navigation
         /// </summary>
-        /// <param name="sender">The Frame that failed to navigate</param>
-        /// <param name="e">Navigation failure event arguments</param>
-        private void ContentFrame_NavigationFailed(object sender, NavigationFailedEventArgs e)
+        private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
-            Debug.WriteLine($"MainPage: Content frame navigation failed to {e.SourcePageType?.Name}: {e.Exception.Message}");
-            
-            ShowErrorMessage("Page Load Error", 
-                $"Unable to load the requested page. Please try again.\n\nError: {e.Exception.Message}");
-            
-            // Attempt recovery by navigating to home page
             try
             {
-                NavigateToPage("home");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION: Frame navigated to {e.SourcePageType?.Name}");
+                UpdateNavigationFromFrame();
             }
-            catch (Exception recoveryEx)
+            catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Recovery navigation also failed: {recoveryEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Frame navigation event error: {ex.Message}");
             }
         }
 
-        #endregion
-
-        #region Navigation Methods
-
         /// <summary>
-        /// Navigates to the specified page based on the tag identifier.
-        /// This method maps tag strings to actual page types and performs navigation.
+        /// 🚀 NAVIGATION: Core navigation method
+        /// 🎯 Centralized page navigation with title and breadcrumb updates
         /// </summary>
-        /// <param name="pageTag">The tag identifying which page to navigate to</param>
         private void NavigateToPage(string pageTag)
         {
-            if (string.IsNullOrEmpty(pageTag) || _isNavigating)
-                return;
-
             try
             {
-                _isNavigating = true;
+                Type pageType = null;
                 
-                Type pageType = GetPageTypeFromTag(pageTag);
-                
+                // 🚀 NAVIGATION: Special handling for settings
+                if (pageTag == "settings")
+                {
+                    pageType = typeof(SettingsPage);
+                    CurrentPageTitle = "Settings";
+                    BreadcrumbText.Text = "Home > Settings";
+                }
+                // 🚀 NAVIGATION: Handle mapped pages
+                else if (_pageTypeMap.ContainsKey(pageTag))
+                {
+                    pageType = _pageTypeMap[pageTag];
+                    CurrentPageTitle = _pageTitleMap.ContainsKey(pageTag) ? _pageTitleMap[pageTag] : "Customer Management";
+                }
+
+                // 🚀 NAVIGATION: Navigate if page type found
                 if (pageType != null)
                 {
-                    // Check if we're already on this page
-                    if (ContentFrame.CurrentSourcePageType != pageType)
-                    {
-                        bool navigationResult = ContentFrame.Navigate(pageType);
-                        Debug.WriteLine($"MainPage: Navigation to {pageType.Name}: {navigationResult}");
-                        
-                        if (navigationResult)
-                        {
-                            UpdatePageHeader(pageTag);
-                        }
-                    }
+                    ContentFrame.Navigate(pageType);
+                    System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION: Successfully navigated to {pageType.Name}");
                 }
                 else
                 {
-                    Debug.WriteLine($"MainPage: Unknown page tag: {pageTag}");
-                    ShowErrorMessage("Navigation Error", $"Unknown page: {pageTag}");
+                    // 🚀 NAVIGATION: Show placeholder for unimplemented pages
+                    ShowPagePlaceholder(pageTag);
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error navigating to page '{pageTag}': {ex.Message}");
-                ShowErrorMessage("Navigation Error", $"Unable to navigate to {pageTag} page.");
-            }
-            finally
-            {
-                _isNavigating = false;
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Failed to navigate to {pageTag} - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Maps page tag strings to actual page types.
-        /// This method centralizes the mapping between navigation identifiers and page classes.
+        /// 🚀 NAVIGATION: Show placeholder for unimplemented pages
+        /// 🎯 Provides feedback for pages that don't exist yet
         /// </summary>
-        /// <param name="pageTag">The page tag to map</param>
-        /// <returns>The Type of the page to navigate to, or null if not found</returns>
-        private Type GetPageTypeFromTag(string pageTag)
-        {
-            return pageTag?.ToLowerInvariant() switch
-            {
-                "home" => typeof(HomePage),
-                "edit" => typeof(EditPage),
-                "settings" => typeof(SettingsPage),
-                "network" => typeof(HomePage), // For now, could be a dedicated NetworkPage
-                "about" => typeof(SettingsPage), // For now, could be a dedicated AboutPage
-                _ => null
-            };
-        }
-
-        /// <summary>
-        /// Updates the page header content based on the current page.
-        /// This method customizes the header text and subtitle for different pages.
-        /// </summary>
-        /// <param name="pageTag">The tag of the current page</param>
-        private void UpdatePageHeader(string pageTag)
+        private async void ShowPagePlaceholder(string pageTag)
         {
             try
             {
-                var (title, subtitle) = GetPageHeaderContent(pageTag);
-                
-                PageTitleTextBlock.Text = title;
-                
-                if (!string.IsNullOrEmpty(subtitle))
+                var dialog = new ContentDialog
                 {
-                    PageSubtitleTextBlock.Text = subtitle;
-                    PageSubtitleTextBlock.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    PageSubtitleTextBlock.Visibility = Visibility.Collapsed;
-                }
+                    Title = "Page Coming Soon",
+                    Content = $"The {_pageTitleMap.GetValueOrDefault(pageTag, pageTag)} page is not implemented yet.\n\nThis would be a great place to add more features to your app!",
+                    CloseButtonText = "OK",
+                    DefaultButton = ContentDialogButton.Close
+                };
+
+                await dialog.ShowAsync();
+                
+                // Navigate back to home
+                NavigateToPage("home");
+                HomeNavItem.IsSelected = true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error updating page header: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Failed to show placeholder - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Gets the appropriate title and subtitle for a given page tag.
+        /// 🚀 NAVIGATION: Update NavigationView selection based on current frame content
+        /// 🎯 Keeps NavigationView synchronized with actual page state
         /// </summary>
-        /// <param name="pageTag">The page tag</param>
-        /// <returns>A tuple containing the title and subtitle</returns>
-        private (string title, string subtitle) GetPageHeaderContent(string pageTag)
-        {
-            return pageTag?.ToLowerInvariant() switch
-            {
-                "home" => ("Customer Management", "View and manage your customer database"),
-                "edit" => ("Edit Customer", "Add or modify customer information"),
-                "settings" => ("Settings", "Configure application preferences"),
-                "network" => ("Network Demo", "API integration and network features"),
-                "about" => ("About", "Application information and credits"),
-                _ => ("UWP Demo Application", "Modern Windows development showcase")
-            };
-        }
-
-        /// <summary>
-        /// Restores the navigation selection to match the current page.
-        /// This ensures the navigation menu reflects the actual current page.
-        /// </summary>
-        private void RestoreNavigationSelection()
+        private void UpdateNavigationFromFrame()
         {
             try
             {
                 var currentPageType = ContentFrame.CurrentSourcePageType;
                 if (currentPageType == null) return;
 
-                string pageTag = GetTagFromPageType(currentPageType);
-                if (!string.IsNullOrEmpty(pageTag))
+                // 🚀 NAVIGATION: Find corresponding navigation item
+                string pageTag = null;
+                
+                if (currentPageType == typeof(SettingsPage))
                 {
-                    UpdateNavigationSelection(pageTag);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error restoring navigation selection: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Maps page types back to their corresponding tags.
-        /// This is the inverse of GetPageTypeFromTag.
-        /// </summary>
-        /// <param name="pageType">The page type to map</param>
-        /// <returns>The corresponding tag, or null if not found</returns>
-        private string GetTagFromPageType(Type pageType)
-        {
-            if (pageType == typeof(HomePage)) return "home";
-            if (pageType == typeof(EditPage)) return "edit";
-            if (pageType == typeof(SettingsPage)) return "settings";
-            return null;
-        }
-
-        /// <summary>
-        /// Updates the navigation view selection to match the specified tag.
-        /// </summary>
-        /// <param name="pageTag">The tag of the page to select</param>
-        private void UpdateNavigationSelection(string pageTag = null)
-        {
-            try
-            {
-                if (pageTag == "settings")
-                {
-                    MainNavigationView.SelectedItem = null;
-                    MainNavigationView.IsSettingsSelected = true;
+                    // Handle settings specially
+                    MainNavigationView.SelectedItem = MainNavigationView.SettingsItem;
+                    CurrentPageTitle = "Settings";
+                    BreadcrumbText.Text = "Home > Settings";
+                    return;
                 }
                 else
                 {
-                    MainNavigationView.IsSettingsSelected = false;
-                    
-                    // Find and select the matching menu item
-                    foreach (var item in MainNavigationView.MenuItems)
+                    // Find by page type
+                    foreach (var kvp in _pageTypeMap)
                     {
-                        if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem &&
-                            navItem.Tag?.ToString() == pageTag)
+                        if (kvp.Value == currentPageType)
                         {
-                            MainNavigationView.SelectedItem = navItem;
+                            pageTag = kvp.Key;
                             break;
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error updating navigation selection: {ex.Message}");
-            }
-        }
 
-        /// <summary>
-        /// Saves the current navigation state for restoration later.
-        /// </summary>
-        private void SaveNavigationState()
-        {
-            try
-            {
-                // Save current page selection
-                var currentPageType = ContentFrame.CurrentSourcePageType;
-                if (currentPageType != null)
+                // 🚀 NAVIGATION: Update selected item
+                if (!string.IsNullOrEmpty(pageTag))
                 {
-                    string pageTag = GetTagFromPageType(currentPageType);
-                    if (!string.IsNullOrEmpty(pageTag))
+                    var navItem = FindNavigationItemByTag(pageTag);
+                    if (navItem != null)
                     {
-                        _settingsService.UpdateSetting("LastPageTag", pageTag);
+                        MainNavigationView.SelectedItem = navItem;
+                        CurrentPageTitle = _pageTitleMap.GetValueOrDefault(pageTag, "Customer Management");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error saving navigation state: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Failed to update navigation from frame - {ex.Message}");
             }
         }
 
-        #endregion
+        /// <summary>
+        /// 🚀 NAVIGATION: Find NavigationViewItem by tag
+        /// 🔍 Searches both menu items and footer items
+        /// </summary>
+        private Microsoft.UI.Xaml.Controls.NavigationViewItem FindNavigationItemByTag(string tag)
+        {
+            // Search menu items
+            foreach (var item in MainNavigationView.MenuItems)
+            {
+                if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && navItem.Tag?.ToString() == tag)
+                    return navItem;
+            }
 
-        #region UI Event Handlers
+            // Search footer items
+            foreach (var item in MainNavigationView.FooterMenuItems)
+            {
+                if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && navItem.Tag?.ToString() == tag)
+                    return navItem;
+            }
+
+            return null;
+        }
 
         /// <summary>
-        /// Handles theme toggle button clicks.
-        /// This method cycles through available themes when the user clicks the theme button.
+        /// 🚀 NAVIGATION: Update breadcrumb navigation
+        /// 📍 Shows current navigation path to user
         /// </summary>
-        /// <param name="sender">The button that was clicked</param>
-        /// <param name="e">Click event arguments</param>
-        private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
+        private void UpdateBreadcrumb()
         {
             try
             {
-                // Toggle the theme using the settings service
-                _settingsService.ToggleTheme();
+                // Find current page tag
+                string currentTag = null;
+                var selectedItem = MainNavigationView.SelectedItem as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                 
-                Debug.WriteLine($"MainPage: Theme toggled to {_settingsService.CurrentTheme}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error toggling theme: {ex.Message}");
-                ShowErrorMessage("Theme Error", "Unable to change the application theme.");
-            }
-        }
-
-        #endregion
-
-        #region Service Event Handlers
-
-        /// <summary>
-        /// Handles theme change events from the settings service.
-        /// This method updates the UI to reflect theme changes.
-        /// </summary>
-        /// <param name="sender">The settings service</param>
-        /// <param name="newTheme">The new theme that was applied</param>
-        private void SettingsService_ThemeChanged(object sender, ElementTheme newTheme)
-        {
-            try
-            {
-                // Update theme toggle button appearance
-                UpdateThemeToggleButton();
-                
-                Debug.WriteLine($"MainPage: Responded to theme change: {newTheme}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error handling theme change: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Handles network operation completion events.
-        /// This method can show progress indicators or status updates for network operations.
-        /// </summary>
-        /// <param name="sender">The network service</param>
-        /// <param name="e">Network operation event arguments</param>
-        private void NetworkService_OperationCompleted(object sender, NetworkOperationEventArgs e)
-        {
-            try
-            {
-                // Show brief feedback for network operations
-                if (!e.Success && !string.IsNullOrEmpty(e.ErrorMessage))
+                if (selectedItem != null)
                 {
-                    ShowInfoMessage("Network Operation", $"Operation '{e.OperationName}' failed: {e.ErrorMessage}");
+                    currentTag = selectedItem.Tag?.ToString();
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error handling network operation event: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Handles network status timer ticks.
-        /// This method periodically updates the network status indicator.
-        /// </summary>
-        /// <param name="sender">The timer</param>
-        /// <param name="e">Timer event arguments</param>
-        private void NetworkStatusTimer_Tick(object sender, object e)
-        {
-            try
-            {
-                UpdateNetworkStatus();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error in network status timer: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region UI Update Methods
-
-        /// <summary>
-        /// Updates the theme toggle button appearance based on the current theme.
-        /// This method changes the button icon to reflect the current theme state.
-        /// </summary>
-        private void UpdateThemeToggleButton()
-        {
-            try
-            {
-                var currentTheme = _settingsService.CurrentTheme;
-                
-                // Update button content based on current theme
-                string buttonContent = currentTheme switch
+                else if (MainNavigationView.SelectedItem == MainNavigationView.SettingsItem)
                 {
-                    ElementTheme.Dark => "☀️", // Sun icon for switching to light
-                    ElementTheme.Light => "🌙", // Moon icon for switching to dark
-                    ElementTheme.Default => "🔄", // Cycle icon for system default
-                    _ => "🌙"
-                };
-                
-                ThemeToggleButton.Content = buttonContent;
-                
-                // Update tooltip
-                string tooltip = currentTheme switch
-                {
-                    ElementTheme.Dark => "Switch to Light theme",
-                    ElementTheme.Light => "Switch to Dark theme",
-                    ElementTheme.Default => "Switch to Light theme",
-                    _ => "Toggle theme"
-                };
-                
-                ToolTipService.SetToolTip(ThemeToggleButton, tooltip);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error updating theme toggle button: {ex.Message}");
-            }
-        }
+                    currentTag = "settings";
+                }
 
-        /// <summary>
-        /// Updates the network status indicator based on current connectivity.
-        /// This method shows whether the device is online and the API is reachable.
-        /// </summary>
-        private async void UpdateNetworkStatus()
-        {
-            try
-            {
-                bool isConnected = _networkService.IsAvailable;
-                
-                if (isConnected)
+                // Update breadcrumb
+                if (!string.IsNullOrEmpty(currentTag) && _breadcrumbMap.ContainsKey(currentTag))
                 {
-                    NetworkStatusBorder.Background = (Windows.UI.Xaml.Media.Brush)Application.Current.Resources["SuccessBrush"];
-                    NetworkStatusText.Text = "Online";
-                    
-                    // Test API connectivity in background
-                    _ = System.Threading.Tasks.Task.Run(async () =>
-                    {
-                        bool apiConnected = await _networkService.TestApiConnectivityAsync();
-                        
-                        await Dispatcher.BeginInvoke(() =>
-                        {
-                            if (!apiConnected)
-                            {
-                                NetworkStatusBorder.Background = (Windows.UI.Xaml.Media.Brush)Application.Current.Resources["WarningBrush"];
-                                NetworkStatusText.Text = "Limited";
-                            }
-                        });
-                    });
+                    BreadcrumbText.Text = _breadcrumbMap[currentTag];
                 }
                 else
                 {
-                    NetworkStatusBorder.Background = (Windows.UI.Xaml.Media.Brush)Application.Current.Resources["ErrorBrush"];
-                    NetworkStatusText.Text = "Offline";
+                    BreadcrumbText.Text = "Home";
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error updating network status: {ex.Message}");
-                
-                // Show unknown status on error
-                NetworkStatusBorder.Background = (Windows.UI.Xaml.Media.Brush)Application.Current.Resources["WarningBrush"];
-                NetworkStatusText.Text = "Unknown";
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Failed to update breadcrumb - {ex.Message}");
             }
         }
 
+        #region Header Action Handlers
+
         /// <summary>
-        /// Updates notification badges on navigation items.
-        /// This method can show counts or alerts on navigation menu items.
+        /// 🚀 NAVIGATION: Handle search button click
+        /// 🔍 Opens search functionality
         /// </summary>
-        private void UpdateBadges()
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Update home badge with customer count
-                var dataService = DataService.Instance;
-                if (dataService.IsDataLoaded)
+                var dialog = new ContentDialog
                 {
-                    int customerCount = dataService.CustomerCount;
-                    if (customerCount > 0)
-                    {
-                        HomeBadge.Value = customerCount;
-                        HomeBadge.Visibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        HomeBadge.Visibility = Visibility.Collapsed;
-                    }
-                }
-                
-                // Update edit badge if there are unsaved changes
-                // This would be implemented based on edit page state
+                    Title = "Customer Search",
+                    Content = "Search functionality coming soon!\n\nThis would allow you to quickly find customers by name, email, or company.",
+                    CloseButtonText = "OK",
+                    DefaultButton = ContentDialogButton.Close
+                };
+
+                await dialog.ShowAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error updating badges: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region User Feedback Methods
-
-        /// <summary>
-        /// Shows an error message to the user using the global InfoBar.
-        /// </summary>
-        /// <param name="title">The error title</param>
-        /// <param name="message">The error message</param>
-        private void ShowErrorMessage(string title, string message)
-        {
-            try
-            {
-                GlobalInfoBar.Title = title;
-                GlobalInfoBar.Message = message;
-                GlobalInfoBar.Severity = InfoBarSeverity.Error;
-                GlobalInfoBar.IsOpen = true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error showing error message: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Search error - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Shows an informational message to the user using the global InfoBar.
+        /// 🚀 NAVIGATION: Handle notifications button click
+        /// 📢 Shows notifications panel
         /// </summary>
-        /// <param name="title">The message title</param>
-        /// <param name="message">The message content</param>
-        private void ShowInfoMessage(string title, string message)
+        private async void NotificationsButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                GlobalInfoBar.Title = title;
-                GlobalInfoBar.Message = message;
-                GlobalInfoBar.Severity = InfoBarSeverity.Informational;
-                GlobalInfoBar.IsOpen = true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MainPage: Error showing info message: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Shows a welcome message if appropriate based on app usage history.
-        /// </summary>
-        private void ShowWelcomeMessage()
-        {
-            try
-            {
-                string welcomeMessage = _settingsService.GetWelcomeMessage();
-                
-                if (_settingsService.CurrentSettings.IsFirstRun)
+                var dialog = new ContentDialog
                 {
-                    ShowInfoMessage("Welcome!", welcomeMessage);
-                }
-                else if (_settingsService.CurrentSettings.TimeSinceLastLaunch.TotalHours > 24)
-                {
-                    ShowInfoMessage("Welcome Back!", welcomeMessage);
-                }
+                    Title = "Notifications",
+                    Content = "No new notifications.\n\nThis would show important updates about your customer data, system status, and feature announcements.",
+                    CloseButtonText = "OK",
+                    DefaultButton = ContentDialogButton.Close
+                };
+
+                await dialog.ShowAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error showing welcome message: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: Notifications error - {ex.Message}");
             }
         }
 
         #endregion
 
-        #region Cleanup
+        #region Public Navigation Methods
 
         /// <summary>
-        /// Performs cleanup when the page is being disposed.
-        /// This method unsubscribes from events and stops timers to prevent memory leaks.
+        /// 🚀 NAVIGATION: Public method for external navigation to settings
+        /// 🎯 Maintains navigation consistency throughout the app
         /// </summary>
-        ~MainPage()
+        public void NavigateToSettings()
         {
             try
             {
-                // Stop network status timer
-                _networkStatusTimer?.Stop();
-                
-                // Unsubscribe from service events
-                if (_settingsService != null)
-                {
-                    _settingsService.ThemeChanged -= SettingsService_ThemeChanged;
-                }
-                
-                if (_networkService != null)
-                {
-                    _networkService.NetworkOperationCompleted -= NetworkService_OperationCompleted;
-                }
-                
-                Debug.WriteLine("MainPage: Cleanup completed");
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: External NavigateToSettings called");
+                NavigateToPage("settings");
+                MainNavigationView.SelectedItem = MainNavigationView.SettingsItem;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MainPage: Error during cleanup: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: NavigateToSettings error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 🚀 NAVIGATION: Public method for navigating to home
+        /// 🎯 Provides programmatic navigation with UI consistency
+        /// </summary>
+        public void NavigateToHome()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: External NavigateToHome called");
+                NavigateToPage("home");
+                HomeNavItem.IsSelected = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: NavigateToHome error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 🚀 NAVIGATION: Public method for navigating to edit page
+        /// 🎯 Supports state management integration
+        /// </summary>
+        public void NavigateToEdit(object parameter = null)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: External NavigateToEdit called");
+                
+                if (parameter != null)
+                {
+                    ContentFrame.Navigate(typeof(EditPage), parameter);
+                }
+                else
+                {
+                    NavigateToPage("edit");
+                }
+                
+                EditNavItem.IsSelected = true;
+                CurrentPageTitle = "Customer Editor";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: NavigateToEdit error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 🚀 NAVIGATION: Public method for navigating to edit page with customer
+        /// 🎯 Enhanced: Direct navigation through NavigationView with customer parameter
+        /// 📱 Called from ViewModels and other pages for customer editing
+        /// </summary>
+        public void NavigateToEditWithCustomer(Customer customer)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION: NavigateToEditWithCustomer called for {customer?.FullName}");
+                
+                if (customer != null)
+                {
+                    // Store customer in state service
+                    var stateService = UWP_Demo.Services.NavigationStateService.Instance;
+                    stateService.SetSelectedCustomerForEdit(customer);
+                    
+                    // Navigate to EditPage with customer parameter
+                    ContentFrame.Navigate(typeof(EditPage), customer);
+                    
+                    // Update NavigationView selection
+                    EditNavItem.IsSelected = true;
+                    CurrentPageTitle = $"Edit {customer.FullName}";
+                    
+                    System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: Successfully navigated to EditPage with customer");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: NavigateToEditWithCustomer error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 🚀 NAVIGATION: Public method for navigating to new customer page
+        /// 🎯 Enhanced: Direct navigation through NavigationView for new customer
+        /// 📱 Called from ViewModels and other pages for customer creation
+        /// </summary>
+        public void NavigateToNewCustomer()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: NavigateToNewCustomer called");
+                
+                // Clear any existing state
+                var stateService = UWP_Demo.Services.NavigationStateService.Instance;
+                stateService.ClearAllState();
+                
+                // Navigate to EditPage without customer (new customer mode)
+                ContentFrame.Navigate(typeof(EditPage), null);
+                
+                // Update NavigationView selection
+                EditNavItem.IsSelected = true;
+                CurrentPageTitle = "New Customer";
+                
+                System.Diagnostics.Debug.WriteLine("🚀 NAVIGATION: Successfully navigated to new customer EditPage");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"🚀 NAVIGATION ERROR: NavigateToNewCustomer error: {ex.Message}");
             }
         }
 

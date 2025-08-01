@@ -3,83 +3,368 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:UWP_Demo.Views"
-    xmlns:viewmodels="using:UWP_Demo.ViewModels"
+    xmlns:models="using:UWP_Demo.Models"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <viewmodels:EditViewModel />
-    </Page.DataContext>
-
-    <Grid Margin="{StaticResource LargePadding}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="{StaticResource MediumMargin}">
-            <TextBlock Text="{Binding PageTitle}" Style="{StaticResource HeaderTextStyle}" />
-            <TextBlock Text="{Binding PageSubtitle}" Style="{StaticResource CaptionTextStyle}" />
-        </StackPanel>
-
-        <!-- Form -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Spacing="16" MaxWidth="400" HorizontalAlignment="Left">
-                
-                <!-- First Name -->
-                <StackPanel>
-                    <TextBlock Text="First Name *" Style="{StaticResource BodyTextStyle}" />
-                    <TextBox Text="{Binding EditingCustomer.FirstName, Mode=TwoWay}" 
-                             Style="{StaticResource FormTextBoxStyle}" />
-                    <TextBlock Text="{Binding FirstNameError}" Style="{StaticResource ErrorTextStyle}" />
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
+            
+            <!-- ?? STATE MANAGEMENT: Header with state restoration info -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                            CornerRadius="6"
+                            Width="40"
+                            Height="40">
+                        <SymbolIcon Symbol="Edit" 
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="PageTitle"
+                                   Text="Edit Customer" 
+                                   FontSize="28" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBlock x:Name="PageSubtitle"
+                                   Text="Modify customer information" 
+                                   FontSize="14" 
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
                 </StackPanel>
-
-                <!-- Last Name -->
-                <StackPanel>
-                    <TextBlock Text="Last Name *" Style="{StaticResource BodyTextStyle}" />
-                    <TextBox Text="{Binding EditingCustomer.LastName, Mode=TwoWay}" 
-                             Style="{StaticResource FormTextBoxStyle}" />
-                    <TextBlock Text="{Binding LastNameError}" Style="{StaticResource ErrorTextStyle}" />
-                </StackPanel>
-
-                <!-- Email -->
-                <StackPanel>
-                    <TextBlock Text="Email *" Style="{StaticResource BodyTextStyle}" />
-                    <TextBox Text="{Binding EditingCustomer.Email, Mode=TwoWay}" 
-                             Style="{StaticResource FormTextBoxStyle}" />
-                    <TextBlock Text="{Binding EmailError}" Style="{StaticResource ErrorTextStyle}" />
-                </StackPanel>
-
-                <!-- Phone -->
-                <StackPanel>
-                    <TextBlock Text="Phone" Style="{StaticResource BodyTextStyle}" />
-                    <TextBox Text="{Binding EditingCustomer.Phone, Mode=TwoWay}" 
-                             Style="{StaticResource FormTextBoxStyle}" />
-                    <TextBlock Text="{Binding PhoneError}" Style="{StaticResource ErrorTextStyle}" />
-                </StackPanel>
-
-                <!-- Company -->
-                <StackPanel>
-                    <TextBlock Text="Company" Style="{StaticResource BodyTextStyle}" />
-                    <TextBox Text="{Binding EditingCustomer.Company, Mode=TwoWay}" 
-                             Style="{StaticResource FormTextBoxStyle}" />
-                </StackPanel>
-
-                <!-- Success Message -->
-                <TextBlock Text="{Binding SuccessMessage}" Style="{StaticResource SuccessTextStyle}" />
             </StackPanel>
-        </ScrollViewer>
 
-        <!-- Actions -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="{StaticResource MediumMargin}">
-            <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" />
-            <Button Content="{Binding SaveButtonText}" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}" />
+            <!-- ?? STATE MANAGEMENT: State restoration InfoBar -->
+            <muxc:InfoBar x:Name="StateInfoBar"
+                          Title="State Restored"
+                          Message="Customer data and form state have been restored from your previous session."
+                          Severity="Success"
+                          IsOpen="False"
+                          IsClosable="True">
+                <muxc:InfoBar.IconSource>
+                    <muxc:SymbolIconSource Symbol="Download" />
+                </muxc:InfoBar.IconSource>
+            </muxc:InfoBar>
+
+            <!-- ?? STATE MANAGEMENT: Unsaved changes warning -->
+            <muxc:InfoBar x:Name="UnsavedChangesInfoBar"
+                          Title="Unsaved Changes Detected"
+                          Message="You have unsaved changes from a previous session. Your work has been preserved."
+                          Severity="Warning"
+                          IsOpen="False"
+                          IsClosable="True">
+                <muxc:InfoBar.IconSource>
+                    <muxc:FontIconSource Glyph="&#xE7BA;" />
+                </muxc:InfoBar.IconSource>
+            </muxc:InfoBar>
+
+            <!-- ?? CUSTOMER SELECTION: Customer selection dropdown -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="24"
+                    Margin="0,0,0,16">
+                
+                <StackPanel Spacing="16">
+                    <!-- Customer Selection Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8B7;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="Select Customer to Edit" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Customer Dropdown with info -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Spacing="8">
+                            <TextBlock Text="Choose Customer:" 
+                                       FontSize="14" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                            
+                            <ComboBox x:Name="CustomerSelectionComboBox"
+                                      PlaceholderText="Select a customer to edit..."
+                                      HorizontalAlignment="Stretch"
+                                      MinWidth="300"
+                                      FontSize="14"
+                                      SelectionChanged="CustomerSelectionComboBox_SelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Customer">
+                                        <StackPanel Orientation="Horizontal" Spacing="12" Padding="8">
+                                            <!-- Customer avatar -->
+                                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                                                    Width="32"
+                                                    Height="32"
+                                                    CornerRadius="16">
+                                                <TextBlock Text="{x:Bind FirstName, Converter={StaticResource FirstCharConverter}}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+                                            
+                                            <!-- Customer info -->
+                                            <StackPanel>
+                                                <TextBlock Text="{x:Bind FullName}" 
+                                                           FontWeight="SemiBold" 
+                                                           FontSize="14" />
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{x:Bind Email}" 
+                                                               FontSize="12" 
+                                                               Opacity="0.8" />
+                                                    <TextBlock Text="•" 
+                                                               FontSize="12" 
+                                                               Opacity="0.5"
+                                                               Visibility="{x:Bind Company, Converter={StaticResource StringToVisibilityConverter}}" />
+                                                    <TextBlock Text="{x:Bind Company}" 
+                                                               FontSize="12" 
+                                                               Opacity="0.6"
+                                                               Visibility="{x:Bind Company, Converter={StaticResource StringToVisibilityConverter}}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <!-- Quick actions -->
+                        <StackPanel Grid.Column="1" 
+                                    Orientation="Horizontal" 
+                                    Spacing="8"
+                                    VerticalAlignment="Bottom">
+                            <Button x:Name="RefreshCustomersButton"
+                                    Click="RefreshCustomersButton_Click"
+                                    ToolTipService.ToolTip="Refresh customer list"
+                                    Style="{ThemeResource DefaultButtonStyle}"
+                                    Padding="10,8">
+                                <SymbolIcon Symbol="Refresh" />
+                            </Button>
+                            
+                            <Button x:Name="AddNewCustomerButton"
+                                    Click="AddNewCustomerButton_Click"
+                                    ToolTipService.ToolTip="Create new customer"
+                                    Style="{ThemeResource AccentButtonStyle}"
+                                    Padding="10,8">
+                                <SymbolIcon Symbol="Add" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Customer count info -->
+                    <muxc:InfoBar x:Name="CustomerCountInfoBar"
+                                  Title="Customer Database"
+                                  Message="Auto-selected first customer for editing"
+                                  Severity="Informational"
+                                  IsOpen="False"
+                                  IsClosable="True">
+                        <muxc:InfoBar.IconSource>
+                            <muxc:SymbolIconSource Symbol="People" />
+                        </muxc:InfoBar.IconSource>
+                    </muxc:InfoBar>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? STATE MANAGEMENT: Form Section -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- Form Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE77B;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="Customer Information" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- First Name -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="First Name *" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBox x:Name="FirstNameTextBox"
+                                 PlaceholderText="Enter first name"
+                                 TextChanged="OnFormFieldChanged" />
+                    </StackPanel>
+
+                    <!-- Last Name -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Last Name *" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBox x:Name="LastNameTextBox"
+                                 PlaceholderText="Enter last name"
+                                 TextChanged="OnFormFieldChanged" />
+                    </StackPanel>
+
+                    <!-- Email -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Email Address *" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBox x:Name="EmailTextBox"
+                                 PlaceholderText="Enter email address"
+                                 InputScope="EmailNameOrAddress"
+                                 TextChanged="OnFormFieldChanged" />
+                    </StackPanel>
+
+                    <!-- Phone -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Phone Number" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBox x:Name="PhoneTextBox"
+                                 PlaceholderText="Enter phone number"
+                                 InputScope="TelephoneNumber"
+                                 TextChanged="OnFormFieldChanged" />
+                    </StackPanel>
+
+                    <!-- Company -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Company" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBox x:Name="CompanyTextBox"
+                                 PlaceholderText="Enter company name"
+                                 TextChanged="OnFormFieldChanged" />
+                    </StackPanel>
+
+                    <!-- Validation Message -->
+                    <TextBlock x:Name="ValidationMessage"
+                               Text=""
+                               FontSize="12"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumHighBrush}"
+                               Visibility="Collapsed" />
+                </StackPanel>
+            </Border>
+
+            <!-- ?? STATE MANAGEMENT: Action Buttons -->
+            <StackPanel Orientation="Horizontal" 
+                        HorizontalAlignment="Center" 
+                        Spacing="16">
+                
+                <Button x:Name="SaveButton"
+                        Click="SaveButton_Click"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        Padding="24,12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Save" />
+                        <TextBlock Text="Save Changes" FontSize="14" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="CancelButton"
+                        Click="CancelButton_Click"
+                        Style="{ThemeResource DefaultButtonStyle}"
+                        Padding="24,12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Cancel" />
+                        <TextBlock Text="Cancel" FontSize="14" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="ResetButton"
+                        Click="ResetButton_Click"
+                        Style="{ThemeResource DefaultButtonStyle}"
+                        Padding="20,12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Undo" />
+                        <TextBlock Text="Reset" FontSize="14" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- ?? STATE MANAGEMENT: State Information Panel -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <!-- State Info Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE946;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="State Management Info" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- State Display -->
+                    <Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Navigation State Information:" 
+                                       FontSize="14" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                            
+                            <TextBlock x:Name="StateInfoDisplay"
+                                       Text="Loading state information..."
+                                       FontSize="12"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- State Management Buttons -->
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                        <Button x:Name="RefreshStateButton"
+                                Click="RefreshStateButton_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Refresh State" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="ClearStateButton"
+                                Click="ClearStateButton_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="16" />
+                                <TextBlock Text="Clear State" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
         </StackPanel>
-
-        <!-- Error Notification -->
-        <muxc:InfoBar IsOpen="{Binding HasError}" Severity="Error" Title="Error" Message="{Binding ErrorMessage}" 
-                     Grid.Row="0" Grid.RowSpan="3" VerticalAlignment="Top" />
-    </Grid>
+    </ScrollViewer>
 </Page>

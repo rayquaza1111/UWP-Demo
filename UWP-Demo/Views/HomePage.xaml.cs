@@ -1,453 +1,293 @@
-using System;
-using System.Diagnostics;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
-using UWP_Demo.ViewModels;
-using UWP_Demo.Models;
-using UWP_Demo.Helpers;
+using Windows.UI.Xaml;
+using System;
+using UWP_Demo.Models;  // ?? STATE MANAGEMENT: Import Customer model
 
 namespace UWP_Demo.Views
 {
-    /// <summary>
-    /// The Home page that displays the customer list and provides basic customer management functionality.
-    /// This page demonstrates ListView data binding, search functionality, and command integration
-    /// in a UWP application using the MVVM pattern.
-    /// </summary>
-    /// <remarks>
-    /// This page showcases several key UWP concepts:
-    /// - ListView with data binding to ObservableCollection
-    /// - Search and filtering with real-time updates
-    /// - Command binding for user actions
-    /// - Navigation parameter handling
-    /// - Responsive design with adaptive layouts
-    /// - Empty state and loading state handling
-    /// - Context menus and user interaction patterns
-    /// 
-    /// The page uses HomeViewModel as its data context and demonstrates
-    /// proper separation of concerns between the view and business logic.
-    /// </remarks>
     public sealed partial class HomePage : Page
     {
-        #region Private Fields
-
-        /// <summary>
-        /// Reference to the page's ViewModel for accessing data and commands.
-        /// </summary>
-        private HomeViewModel ViewModel => DataContext as HomeViewModel;
-
-        #endregion
-
-        #region Constructor
-
-        /// <summary>
-        /// Initializes a new instance of the HomePage class.
-        /// Sets up the page and initializes the UI components.
-        /// </summary>
         public HomePage()
         {
             this.InitializeComponent();
-            
-            Debug.WriteLine("HomePage: Initialized successfully");
-        }
-
-        #endregion
-
-        #region Page Lifecycle
-
-        /// <summary>
-        /// Called when the page is navigated to.
-        /// This method handles page activation and parameter processing.
-        /// </summary>
-        /// <param name="e">Navigation event arguments containing parameters and navigation mode</param>
-        /// <remarks>
-        /// This method is called each time the user navigates to this page,
-        /// including when navigating back from other pages. It ensures the
-        /// page state is properly refreshed and any navigation parameters
-        /// are processed correctly.
-        /// </remarks>
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            
-            try
-            {
-                Debug.WriteLine($"HomePage: Navigated to with mode {e.NavigationMode}");
-
-                // Handle any navigation parameters
-                if (e.Parameter != null)
-                {
-                    HandleNavigationParameter(e.Parameter);
-                }
-
-                // Refresh the page if returning from another page
-                if (e.NavigationMode == NavigationMode.Back)
-                {
-                    RefreshPageContent();
-                }
-
-                // Focus the search box for better user experience
-                if (!string.IsNullOrEmpty(ViewModel?.SearchText))
-                {
-                    // If there's existing search text, keep focus on the list
-                    CustomerListView.Focus(Windows.UI.Xaml.FocusState.Programmatic);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error in OnNavigatedTo: {ex.Message}");
-            }
         }
 
         /// <summary>
-        /// Called when the page is navigated away from.
-        /// This method handles cleanup and state preservation.
+        /// ?? SUSPENSION & RESUME: Handle welcome InfoBar closed event
+        /// ?? Dismisses the welcome message when user closes the InfoBar
+        /// ?? Integrates with SuspensionService to clear suspension state
+        /// ? Provides clean user experience with proper state management
         /// </summary>
-        /// <param name="e">Navigation event arguments</param>
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            base.OnNavigatedFrom(e);
-            
-            try
-            {
-                Debug.WriteLine($"HomePage: Navigated from to {e.SourcePageType?.Name}");
-
-                // Save current state for potential restoration
-                SavePageState();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error in OnNavigatedFrom: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Navigation Parameter Handling
-
-        /// <summary>
-        /// Handles navigation parameters passed to the page.
-        /// This method processes different types of parameters for various navigation scenarios.
-        /// </summary>
-        /// <param name="parameter">The navigation parameter object</param>
-        /// <remarks>
-        /// Navigation parameters can include:
-        /// - Customer objects (for selecting a specific customer)
-        /// - Search strings (for pre-filtering the list)
-        /// - Action commands (for triggering specific behaviors)
-        /// </remarks>
-        private void HandleNavigationParameter(object parameter)
+        private void WelcomeInfoBar_Closed(Microsoft.UI.Xaml.Controls.InfoBar sender, Microsoft.UI.Xaml.Controls.InfoBarClosedEventArgs args)
         {
             try
             {
-                switch (parameter)
-                {
-                    case Customer customer:
-                        // Select a specific customer if passed as parameter
-                        SelectCustomer(customer);
-                        break;
-
-                    case string searchText when !string.IsNullOrWhiteSpace(searchText):
-                        // Apply search filter if search text is passed
-                        ApplySearchFilter(searchText);
-                        break;
-
-                    case NavigationAction action:
-                        // Handle specific navigation actions
-                        HandleNavigationAction(action);
-                        break;
-
-                    default:
-                        Debug.WriteLine($"HomePage: Unknown navigation parameter type: {parameter?.GetType().Name}");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error handling navigation parameter: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Selects a specific customer in the list.
-        /// </summary>
-        /// <param name="customer">The customer to select</param>
-        private void SelectCustomer(Customer customer)
-        {
-            try
-            {
-                if (customer != null && ViewModel != null)
-                {
-                    ViewModel.SelectedCustomer = customer;
-                    
-                    // Scroll to the selected customer
-                    CustomerListView.ScrollIntoView(customer);
-                    
-                    Debug.WriteLine($"HomePage: Selected customer {customer.FullName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error selecting customer: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Applies a search filter to the customer list.
-        /// </summary>
-        /// <param name="searchText">The search text to apply</param>
-        private void ApplySearchFilter(string searchText)
-        {
-            try
-            {
-                if (ViewModel != null)
-                {
-                    ViewModel.SearchText = searchText;
-                    Debug.WriteLine($"HomePage: Applied search filter: {searchText}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error applying search filter: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Handles specific navigation actions.
-        /// </summary>
-        /// <param name="action">The navigation action to handle</param>
-        private void HandleNavigationAction(NavigationAction action)
-        {
-            try
-            {
-                switch (action)
-                {
-                    case NavigationAction.RefreshData:
-                        ViewModel?.RefreshCommand?.Execute(null);
-                        break;
-
-                    case NavigationAction.ClearSearch:
-                        ViewModel?.ClearSearchCommand?.Execute(null);
-                        break;
-
-                    case NavigationAction.AddCustomer:
-                        ViewModel?.AddCustomerCommand?.Execute(null);
-                        break;
-
-                    default:
-                        Debug.WriteLine($"HomePage: Unknown navigation action: {action}");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error handling navigation action: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Page State Management
-
-        /// <summary>
-        /// Refreshes the page content when returning from navigation.
-        /// This method ensures the data is current and UI state is appropriate.
-        /// </summary>
-        private void RefreshPageContent()
-        {
-            try
-            {
-                // The ViewModel automatically updates when the underlying data changes
-                // due to ObservableCollection binding, but we can trigger explicit
-                // updates here if needed
-
-                // Update command states
-                ViewModel?.RefreshCommand?.CanExecute(null);
-
-                Debug.WriteLine("HomePage: Page content refreshed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error refreshing page content: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Saves the current page state for potential restoration.
-        /// This method preserves important UI state like search text and selection.
-        /// </summary>
-        private void SavePageState()
-        {
-            try
-            {
-                // The ViewModel automatically handles state persistence through the
-                // settings service, but additional UI state could be saved here
-
-                Debug.WriteLine("HomePage: Page state saved");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error saving page state: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region UI Event Handlers
-
-        /// <summary>
-        /// Handles ListView item click events.
-        /// This method provides an alternative way to interact with customer items.
-        /// </summary>
-        /// <param name="sender">The ListView that raised the event</param>
-        /// <param name="e">Item click event arguments</param>
-        private void CustomerListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            try
-            {
-                if (e.ClickedItem is Customer customer)
-                {
-                    // Select the clicked customer
-                    ViewModel.SelectedCustomer = customer;
-                    
-                    // Optionally navigate to edit page on double-click
-                    // This would require detecting double-click vs single-click
-                    
-                    Debug.WriteLine($"HomePage: Customer item clicked: {customer.FullName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HomePage: Error handling item click: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Handles ListView selection changed events.
-        /// This method ensures proper selection state management.
-        /// </summary>
-        /// <param name="sender">The ListView that raised the event</param>
-        /// <param name="e">Selection changed event arguments</param>
-        private void CustomerListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                // The SelectedItem binding should handle this automatically,
-                // but we can add additional logic here if needed
+                System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Welcome InfoBar closed by user");
                 
-                if (e.AddedItems?.Count > 0)
+                // ?? SUSPENSION & RESUME: Dismiss welcome message through ViewModel
+                if (DataContext is ViewModels.HomeViewModel viewModel)
                 {
-                    var selectedCustomer = e.AddedItems[0] as Customer;
-                    Debug.WriteLine($"HomePage: Customer selection changed to: {selectedCustomer?.FullName ?? "None"}");
+                    viewModel.DismissWelcomeMessage();
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomePage: Error handling selection change: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME ERROR: Failed to handle welcome close - {ex.Message}");
             }
         }
 
-        #endregion
-
-        #region Accessibility Support
-
-        /// <summary>
-        /// Updates accessibility properties based on current page state.
-        /// This method ensures the page is accessible to users with disabilities.
-        /// </summary>
-        private void UpdateAccessibilityProperties()
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Update AutomationProperties for dynamic content
-                if (ViewModel != null)
+                System.Diagnostics.Debug.WriteLine("=== HomePage: SETTINGS BUTTON CLICKED! ===");
+                
+                // Change button text to show it's working
+                try
                 {
-                    // Update list accessibility description
-                    var listDescription = ViewModel.HasCustomers 
-                        ? $"Customer list with {ViewModel.FilteredCustomerCount} items"
-                        : "No customers available";
-                    
-                    Windows.UI.Xaml.Automation.AutomationProperties.SetName(
-                        CustomerListView, listDescription);
-
-                    // Update search box accessibility
-                    if (ViewModel.IsSearchActive)
+                    var button = sender as Button;
+                    if (button?.Content is StackPanel stackPanel)
                     {
-                        Windows.UI.Xaml.Automation.AutomationProperties.SetHelpText(
-                            CustomerListView, $"Filtered results for '{ViewModel.SearchText}'");
+                        var textBlock = stackPanel.Children[1] as TextBlock;
+                        if (textBlock != null)
+                        {
+                            textBlock.Text = "Loading...";
+                        }
+                    }
+                }
+                catch { /* Ignore button text update errors */ }
+                
+                // Try multiple navigation approaches
+                bool navigationAttempted = false;
+                
+                // Approach 1: MainPage method
+                try
+                {
+                    var rootFrame = Window.Current.Content as Frame;
+                    if (rootFrame?.Content is MainPage mainPage)
+                    {
+                        System.Diagnostics.Debug.WriteLine(">>> Approach 1: Using MainPage.NavigateToSettings()");
+                        mainPage.NavigateToSettings();
+                        navigationAttempted = true;
+                        System.Diagnostics.Debug.WriteLine(">>> Approach 1: SUCCESS");
+                    }
+                }
+                catch (Exception ex1)
+                {
+                    System.Diagnostics.Debug.WriteLine($">>> Approach 1 failed: {ex1.Message}");
+                }
+                
+                // Approach 2: Direct frame navigation
+                if (!navigationAttempted)
+                {
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine(">>> Approach 2: Direct frame navigation");
+                        var frame = Frame;
+                        if (frame != null)
+                        {
+                            bool success = frame.Navigate(typeof(SettingsPage));
+                            System.Diagnostics.Debug.WriteLine($">>> Approach 2: Result = {success}");
+                            navigationAttempted = success;
+                        }
+                    }
+                    catch (Exception ex2)
+                    {
+                        System.Diagnostics.Debug.WriteLine($">>> Approach 2 failed: {ex2.Message}");
+                    }
+                }
+                
+                // Approach 3: Root frame direct navigation
+                if (!navigationAttempted)
+                {
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine(">>> Approach 3: Root frame direct navigation");
+                        var rootFrame = Window.Current.Content as Frame;
+                        if (rootFrame != null)
+                        {
+                            bool success = rootFrame.Navigate(typeof(SettingsPage));
+                            System.Diagnostics.Debug.WriteLine($">>> Approach 3: Result = {success}");
+                            navigationAttempted = success;
+                        }
+                    }
+                    catch (Exception ex3)
+                    {
+                        System.Diagnostics.Debug.WriteLine($">>> Approach 3 failed: {ex3.Message}");
+                    }
+                }
+                
+                if (!navigationAttempted)
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> [ERROR] ALL NAVIGATION APPROACHES FAILED!");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> [SUCCESS] NAVIGATION ATTEMPTED SUCCESSFULLY!");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($">>> [CRITICAL] ERROR in SettingsButton_Click: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($">>> [CRITICAL] Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// ?? STATE MANAGEMENT: Handle customer edit navigation
+        /// ?? Enhanced: Navigate through MainPage's NavigationView system
+        /// ?? Called when user clicks Edit button on a customer
+        /// </summary>
+        public void NavigateToEditCustomer(Customer customer)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Navigating to edit customer: {customer?.FullName}");
+                
+                if (customer != null)
+                {
+                    // ?? STATE MANAGEMENT: Store customer state for editing
+                    var stateService = UWP_Demo.Services.NavigationStateService.Instance;
+                    stateService.SetSelectedCustomerForEdit(customer);
+                    
+                    // ?? NAVIGATION: Check if we're inside MainPage with NavigationView
+                    var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                    if (currentFrame?.Content is MainPage mainPage)
+                    {
+                        // Navigate through MainPage's ContentFrame (NavigationView)
+                        var contentFrame = mainPage.FindName("ContentFrame") as Windows.UI.Xaml.Controls.Frame;
+                        if (contentFrame != null)
+                        {
+                            contentFrame.Navigate(typeof(EditPage), customer);
+                            
+                            // Update NavigationView selection to Edit page
+                            var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+                            var editItem = mainPage.FindName("EditNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+                            if (navView != null && editItem != null)
+                            {
+                                navView.SelectedItem = editItem;
+                            }
+                            
+                            System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully navigated to EditPage through NavigationView");
+                            return;
+                        }
+                    }
+                    
+                    // ?? FALLBACK: Direct frame navigation if not in NavigationView
+                    if (Frame != null)
+                    {
+                        Frame.Navigate(typeof(EditPage), customer);
+                        System.Diagnostics.Debug.WriteLine("?? FALLBACK: Successfully navigated to EditPage via direct Frame");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomePage: Error updating accessibility properties: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to edit customer - {ex.Message}");
             }
         }
 
-        #endregion
-
-        #region Helper Methods
-
         /// <summary>
-        /// Scrolls to a specific customer in the list.
-        /// This method provides smooth scrolling to ensure customer visibility.
+        /// ?? STATE MANAGEMENT: Handle new customer navigation
+        /// ?? Enhanced: Navigate through MainPage's NavigationView system
+        /// ?? Called when user wants to create a new customer
         /// </summary>
-        /// <param name="customer">The customer to scroll to</param>
-        public void ScrollToCustomer(Customer customer)
+        public void NavigateToNewCustomer()
         {
             try
             {
-                if (customer != null)
+                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Navigating to create new customer");
+                
+                // ?? STATE MANAGEMENT: Clear any existing state for fresh start
+                var stateService = UWP_Demo.Services.NavigationStateService.Instance;
+                stateService.ClearAllState();
+                
+                // ?? NAVIGATION: Check if we're inside MainPage with NavigationView
+                var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                if (currentFrame?.Content is MainPage mainPage)
                 {
-                    CustomerListView.ScrollIntoView(customer, ScrollIntoViewAlignment.Default);
-                    Debug.WriteLine($"HomePage: Scrolled to customer {customer.FullName}");
+                    // Navigate through MainPage's ContentFrame (NavigationView)
+                    var contentFrame = mainPage.FindName("ContentFrame") as Windows.UI.Xaml.Controls.Frame;
+                    if (contentFrame != null)
+                    {
+                        contentFrame.Navigate(typeof(EditPage), null);
+                        
+                        // Update NavigationView selection to Edit page
+                        var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+                        var editItem = mainPage.FindName("EditNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+                        if (navView != null && editItem != null)
+                        {
+                            navView.SelectedItem = editItem;
+                        }
+                        
+                        System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully navigated to new customer EditPage through NavigationView");
+                        return;
+                    }
+                }
+                
+                // ?? FALLBACK: Direct frame navigation if not in NavigationView
+                if (Frame != null)
+                {
+                    Frame.Navigate(typeof(EditPage), null);
+                    System.Diagnostics.Debug.WriteLine("?? FALLBACK: Successfully navigated to new customer EditPage via direct Frame");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomePage: Error scrolling to customer: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to new customer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Sets focus to the search box for immediate user input.
-        /// This method improves user experience by enabling quick search.
+        /// ?? DASHBOARD: Navigate to customers page
         /// </summary>
-        public void FocusSearchBox()
+        private void ViewCustomersButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Find the search TextBox and focus it
-                // This would require a name for the TextBox in XAML
-                Debug.WriteLine("HomePage: Search box focused");
+                // Navigate to customers page through MainPage
+                var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                if (currentFrame?.Content is MainPage mainPage)
+                {
+                    // Find and select the customers navigation item
+                    var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+                    var customersItem = mainPage.FindName("CustomersNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+                    if (navView != null && customersItem != null)
+                    {
+                        navView.SelectedItem = customersItem;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"HomePage: Error focusing search box: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"?? DASHBOARD ERROR: Failed to navigate to customers - {ex.Message}");
             }
         }
 
-        #endregion
-    }
-
-    /// <summary>
-    /// Enumeration of navigation actions that can be passed as parameters.
-    /// These actions trigger specific behaviors when the page is navigated to.
-    /// </summary>
-    public enum NavigationAction
-    {
         /// <summary>
-        /// Refresh the customer data.
+        /// ?? DASHBOARD: Navigate to file operations page
         /// </summary>
-        RefreshData,
-
-        /// <summary>
-        /// Clear the current search filter.
-        /// </summary>
-        ClearSearch,
-
-        /// <summary>
-        /// Navigate to add a new customer.
-        /// </summary>
-        AddCustomer
+        private void ManageFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Navigate to file operations page through MainPage
+                var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                if (currentFrame?.Content is MainPage mainPage)
+                {
+                    // Find and select the file operations navigation item
+                    var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+                    var fileOpsItem = mainPage.FindName("FileOpsNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+                    if (navView != null && fileOpsItem != null)
+                    {
+                        navView.SelectedItem = fileOpsItem;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? DASHBOARD ERROR: Failed to navigate to file operations - {ex.Message}");
+            }
+        }
     }
 }

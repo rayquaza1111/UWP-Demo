@@ -2,122 +2,326 @@
     x:Class="UWP_Demo.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:UWP_Demo.Views"
-    xmlns:viewmodels="using:UWP_Demo.ViewModels"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <viewmodels:SettingsViewModel />
-    </Page.DataContext>
-
-    <ScrollViewer Margin="{StaticResource LargePadding}">
-        <StackPanel Spacing="24" MaxWidth="600">
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
             
-            <!-- Header -->
-            <StackPanel>
-                <TextBlock Text="{Binding Title}" Style="{StaticResource HeaderTextStyle}" />
-                <TextBlock Text="Configure application preferences and settings" Style="{StaticResource CaptionTextStyle}" />
+            <!-- ?? NATIVE UWP: Modern header with proper typography -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            CornerRadius="6"
+                            Width="40"
+                            Height="40">
+                        <SymbolIcon Symbol="Setting" 
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Settings" 
+                                   FontSize="28" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Customize your experience and test app features" 
+                                   FontSize="14" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
 
-            <!-- Theme Settings -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="Appearance" Style="{StaticResource SubtitleTextStyle}" />
-                    
-                    <StackPanel>
-                        <TextBlock Text="Theme" Style="{StaticResource BodyTextStyle}" />
-                        <ComboBox ItemsSource="{Binding AvailableThemes}" 
-                                  SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                                  DisplayMemberPath="Name"
-                                  SelectedValuePath="Theme"
-                                  HorizontalAlignment="Left"
-                                  MinWidth="200" />
-                    </StackPanel>
-
-                    <Button Content="Toggle Theme" Command="{Binding ToggleThemeCommand}" 
-                            Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
-                </StackPanel>
-            </Border>
-
-            <!-- Application Settings -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="Application" Style="{StaticResource SubtitleTextStyle}" />
-                    
-                    <ToggleSwitch Header="Enable notifications" 
-                                  IsOn="{Binding NotificationsEnabled, Mode=TwoWay}" />
-                    
-                    <ToggleSwitch Header="Auto-save data" 
-                                  IsOn="{Binding AutoSaveEnabled, Mode=TwoWay}" />
-                    
-                    <StackPanel>
-                        <TextBlock Text="Auto-save interval (minutes)" Style="{StaticResource BodyTextStyle}" />
-                        <Slider Value="{Binding AutoSaveInterval, Mode=TwoWay}"
-                                Minimum="1" Maximum="60" StepFrequency="1"
-                                IsEnabled="{Binding IsAutoSaveIntervalEnabled}"
-                                Width="200" HorizontalAlignment="Left" />
-                        <TextBlock Text="{Binding AutoSaveInterval}" Style="{StaticResource CaptionTextStyle}" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- System Information -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="System Information" Style="{StaticResource SubtitleTextStyle}" />
-                    
-                    <StackPanel Spacing="8">
-                        <TextBlock Style="{StaticResource BodyTextStyle}">
-                            <Run Text="App Version:" FontWeight="SemiBold" />
-                            <Run Text="{Binding AppVersion}" />
-                        </TextBlock>
-                        
-                        <TextBlock Style="{StaticResource BodyTextStyle}">
-                            <Run Text="Network Status:" FontWeight="SemiBold" />
-                            <Run Text="{Binding NetworkStatus}" />
-                        </TextBlock>
-                        
-                        <TextBlock Style="{StaticResource BodyTextStyle}">
-                            <Run Text="Storage:" FontWeight="SemiBold" />
-                            <Run Text="{Binding StorageInfo}" />
-                        </TextBlock>
-                        
-                        <TextBlock Text="{Binding LastBackupInfo}" Style="{StaticResource CaptionTextStyle}" />
-                    </StackPanel>
-
-                    <Button Content="Refresh Status" Command="{Binding RefreshNetworkStatusCommand}" 
-                            Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
-                </StackPanel>
-            </Border>
-
-            <!-- Actions -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="Data Management" Style="{StaticResource SubtitleTextStyle}" />
-                    
+            <!-- ?? THEME SECTION: Native UWP card design -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- ?? Section Header with Palette Icon -->
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" 
-                                Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button Content="Reset to Defaults" Command="{Binding ResetSettingsCommand}" 
-                                Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button Content="Clear All Data" Command="{Binding ClearDataCommand}" 
-                                Style="{StaticResource SecondaryButtonStyle}" />
+                        <FontIcon Glyph="&#xE790;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Appearance" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
+
+                    <!-- ?? Theme Toggle Section -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="App Theme" 
+                                       FontSize="16" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="Switch between light and dark appearance" 
+                                       FontSize="14" 
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+
+                        <ToggleSwitch x:Name="SimpleThemeToggle"
+                                      Grid.Column="1"
+                                      OnContent="Dark"
+                                      OffContent="Light"
+                                      Toggled="SimpleThemeToggle_Toggled"
+                                      VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- ?? Quick Theme Toggle Button -->
+                    <Button x:Name="QuickToggle"
+                            Click="QuickToggle_Click"
+                            HorizontalAlignment="Center"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Padding="20,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE945;" FontSize="16" />
+                            <TextBlock Text="Quick Toggle" FontSize="14" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
 
-            <!-- Loading Indicators -->
-            <StackPanel Orientation="Horizontal" Spacing="16" 
-                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
-                <ProgressRing IsActive="True" Width="20" Height="20" />
-                <TextBlock Text="Processing..." Style="{StaticResource BodyTextStyle}" VerticalAlignment="Center" />
-            </StackPanel>
+            <!-- ?? SUSPENSION & RESUME SECTION: Native UWP card design -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- ?? Section Header with Clock Icon -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE823;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="App Lifecycle Testing" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
 
+                    <!-- ?? Info Display -->
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="16">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE946;" 
+                                          FontSize="16" 
+                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="Suspension Information" 
+                                           FontSize="14" 
+                                           FontWeight="SemiBold"
+                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                            
+                            <TextBlock x:Name="SuspensionStatus"
+                                       Text="Loading suspension info..."
+                                       FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="24,0,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ?? Action Buttons -->
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                        <Button x:Name="RefreshSuspensionInfo"
+                                Click="RefreshSuspensionInfo_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Refresh Info" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="TestSuspensionMessage"
+                                Click="TestSuspensionMessage_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE7C1;" FontSize="16" />
+                                <TextBlock Text="Test Welcome (30s)" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- ?? Instructions InfoBar -->
+                    <muxc:InfoBar Title="How to Test Suspension"
+                                  Message="Minimize the app (Windows+D or minimize button) ? Wait a few seconds ? Restore the app (click on taskbar)"
+                                  Severity="Informational"
+                                  IsOpen="True"
+                                  IsClosable="False">
+                        <muxc:InfoBar.IconSource>
+                            <muxc:FontIconSource Glyph="&#xE946;" />
+                        </muxc:InfoBar.IconSource>
+                    </muxc:InfoBar>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? STATE MANAGEMENT SECTION: Navigation State Testing -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- ?? Section Header with State Icon -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE81C;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="State Management Testing" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- ?? State Info Display -->
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="16">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE946;" 
+                                          FontSize="16" 
+                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="Navigation State Information" 
+                                           FontSize="14" 
+                                           FontWeight="SemiBold"
+                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                            
+                            <TextBlock x:Name="StateStatus"
+                                       Text="Loading state info..."
+                                       FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="24,0,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ?? State Management Buttons -->
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                        <Button x:Name="RefreshStateInfo"
+                                Click="RefreshStateInfo_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Refresh State" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="TestNavigationState"
+                                Click="TestNavigationState_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8A7;" FontSize="16" />
+                                <TextBlock Text="Test Edit Form" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ClearNavigationState"
+                                Click="ClearNavigationState_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="16" />
+                                <TextBlock Text="Clear State" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- ?? State Management Instructions -->
+                    <muxc:InfoBar Title="How to Test State Management"
+                                  Message="Click 'Test Edit Form' ? Fill in some data ? Navigate away ? Return to see your data restored"
+                                  Severity="Informational"
+                                  IsOpen="True"
+                                  IsClosable="False">
+                        <muxc:InfoBar.IconSource>
+                            <muxc:FontIconSource Glyph="&#xE946;" />
+                        </muxc:InfoBar.IconSource>
+                    </muxc:InfoBar>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? STATUS SECTION: Native UWP card design -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <!-- ?? Section Header with Status Icon -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8BC;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock Text="Application Status" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- ?? Status Display with Success Styling -->
+                    <Border Background="{ThemeResource SystemFillColorSuccessBrush}"
+                            CornerRadius="6"
+                            Padding="16">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE73E;" 
+                                      FontSize="16" 
+                                      Foreground="White" />
+                            <StackPanel>
+                                <TextBlock Text="All Systems Operational" 
+                                           FontSize="14" 
+                                           FontWeight="SemiBold"
+                                           Foreground="White" />
+                                <TextBlock x:Name="StatusDisplay"
+                                           Text="Settings are working perfectly!"
+                                           FontSize="12"
+                                           Foreground="White" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ?? NAVIGATION SECTION -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,8,0,24">
+                <Button x:Name="BackButton"
+                        Click="BackButton_Click"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        Padding="24,12"
+                        CornerRadius="20">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <SymbolIcon Symbol="Back" />
+                        <TextBlock Text="Back to Home" FontSize="14" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            
         </StackPanel>
     </ScrollViewer>
-
-    <!-- Error Notification -->
-    <muxc:InfoBar IsOpen="{Binding HasError}" Severity="Error" Title="Error" Message="{Binding ErrorMessage}" 
-                 VerticalAlignment="Top" Margin="16" />
 </Page>
