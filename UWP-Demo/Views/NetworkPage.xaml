@@ -1,0 +1,324 @@
+<Page
+    x:Class="UWP_Demo.Views.NetworkPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_Demo.Views"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <!-- NETWORK API: Dedicated page for demonstrating HTTP/API functionality -->
+    <!-- Purpose: Show JSONPlaceholder API integration and internet capabilities -->
+    <!-- Features: GET/POST requests, connectivity testing, data display -->
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
+            
+            <!-- NETWORK API: Header section -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                            CornerRadius="6"
+                            Width="40"
+                            Height="40">
+                        <SymbolIcon Symbol="Globe" 
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Network API Demo" 
+                                   FontSize="28" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+                        <TextBlock Text="JSONPlaceholder API Integration Demo" 
+                                   FontSize="14" 
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- NETWORK API: Status and connectivity section -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <!-- Connectivity Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE968;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="API Connectivity" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Connectivity Status -->
+                    <muxc:InfoBar x:Name="ConnectivityInfoBar"
+                                  Title="Internet Connection"
+                                  Message="Click 'Test Connection' to verify API connectivity"
+                                  Severity="Informational"
+                                  IsOpen="True"
+                                  IsClosable="False" />
+
+                    <!-- Test Connection Button -->
+                    <Button x:Name="TestConnectionButton"
+                            Click="TestConnectionButton_Click"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            HorizontalAlignment="Center"
+                            Padding="20,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Sync" />
+                            <TextBlock Text="Test Connection" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- NETWORK API: API Operations section -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- Operations Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE753;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="API Operations" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Operation Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- GET Posts Button -->
+                        <Button x:Name="GetPostsButton"
+                                Grid.Row="0" Grid.Column="0"
+                                Click="GetPostsButton_Click"
+                                Margin="4"
+                                HorizontalAlignment="Stretch"
+                                Padding="16,12">
+                            <StackPanel Spacing="8">
+                                <SymbolIcon Symbol="Download" />
+                                <TextBlock Text="GET Posts" FontWeight="SemiBold" />
+                                <TextBlock Text="Fetch sample posts" FontSize="12" Opacity="0.8" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- GET Users Button -->
+                        <Button x:Name="GetUsersButton"
+                                Grid.Row="0" Grid.Column="1"
+                                Click="GetUsersButton_Click"
+                                Margin="4"
+                                HorizontalAlignment="Stretch"
+                                Padding="16,12">
+                            <StackPanel Spacing="8">
+                                <SymbolIcon Symbol="People" />
+                                <TextBlock Text="GET Users" FontWeight="SemiBold" />
+                                <TextBlock Text="Fetch sample users" FontSize="12" Opacity="0.8" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- POST Request Button -->
+                        <Button x:Name="CreatePostButton"
+                                Grid.Row="1" Grid.Column="0"
+                                Click="CreatePostButton_Click"
+                                Margin="4"
+                                HorizontalAlignment="Stretch"
+                                Padding="16,12"
+                                Style="{ThemeResource AccentButtonStyle}">
+                            <StackPanel Spacing="8">
+                                <SymbolIcon Symbol="Upload" />
+                                <TextBlock Text="POST Data" FontWeight="SemiBold" />
+                                <TextBlock Text="Create new post" FontSize="12" Opacity="0.9" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Import to Customers Button -->
+                        <Button x:Name="ImportUsersButton"
+                                Grid.Row="1" Grid.Column="1"
+                                Click="ImportUsersButton_Click"
+                                Margin="4"
+                                HorizontalAlignment="Stretch"
+                                Padding="16,12">
+                            <StackPanel Spacing="8">
+                                <SymbolIcon Symbol="ContactInfo" />
+                                <TextBlock Text="Import Users" FontWeight="SemiBold" />
+                                <TextBlock Text="Add to customers" FontSize="12" Opacity="0.8" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- NETWORK API: Results display section -->
+            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <!-- Results Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8F3;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="API Results" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Results Display -->
+                    <ScrollViewer Height="300" VerticalScrollBarVisibility="Auto">
+                        <Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+                                CornerRadius="4"
+                                Padding="12">
+                            <TextBlock x:Name="ResultsTextBlock"
+                                       Text="No API calls made yet. Click a button above to test the network functionality."
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        </Border>
+                    </ScrollViewer>
+
+                    <!-- Clear Results Button -->
+                    <Button x:Name="ClearResultsButton"
+                            Click="ClearResultsButton_Click"
+                            HorizontalAlignment="Center"
+                            Padding="16,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Clear" />
+                            <TextBlock Text="Clear Results" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- NETWORK API PROOF: Log viewing buttons for mentor verification -->
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Margin="0,12,0,0">
+                        <Button x:Name="ViewHttpLogsButton"
+                                Click="ViewHttpLogsButton_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8C8;" />
+                                <TextBlock Text="View HTTP Logs" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="ShowLogPathButton"
+                                Click="ShowLogPathButton_Click"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8DA;" />
+                                <TextBlock Text="Show Log File Path" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="ClearLogsButton"
+                                Click="ClearLogsButton_Click"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" />
+                                <TextBlock Text="Clear Logs" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- NETWORK API: Information section -->
+            <Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="16">
+                    <!-- Info Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE946;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                        <TextBlock Text="Mentor Verification Guide" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Info Content -->
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="?? PROOF FOR MENTOR - Multiple Verification Methods:" FontWeight="SemiBold" FontSize="16" />
+                        
+                        <TextBlock TextWrapping="Wrap" FontSize="14">
+                            <Run Text="1. Visual Studio Debug Output:" FontWeight="SemiBold" />
+                            <LineBreak />
+                            <Run Text="   • Open Visual Studio Output Window ? Show output from: Debug" />
+                            <LineBreak />
+                            <Run Text="   • Look for 'NETWORK API PROOF:' entries with detailed HTTP info" />
+                        </TextBlock>
+                        
+                        <TextBlock TextWrapping="Wrap" FontSize="14">
+                            <Run Text="2. HTTP Log File:" FontWeight="SemiBold" />
+                            <LineBreak />
+                            <Run Text="   • Click 'Show Log File Path' to get exact file location" />
+                            <LineBreak />
+                            <Run Text="   • Contains complete request/response data with timestamps" />
+                        </TextBlock>
+                        
+                        <TextBlock TextWrapping="Wrap" FontSize="14">
+                            <Run Text="3. Independent API Verification:" FontWeight="SemiBold" />
+                            <LineBreak />
+                            <Run Text="   • Open browser: https://jsonplaceholder.typicode.com/posts" />
+                            <LineBreak />
+                            <Run Text="   • Use Postman/curl to test endpoints directly" />
+                        </TextBlock>
+                        
+                        <TextBlock TextWrapping="Wrap" FontSize="14">
+                            <Run Text="4. Network Traffic:" FontWeight="SemiBold" />
+                            <LineBreak />
+                            <Run Text="   • Use Fiddler/Wireshark to capture HTTP traffic" />
+                            <LineBreak />
+                            <Run Text="   • Monitor actual network packets during API calls" />
+                        </TextBlock>
+
+                        <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" 
+                                CornerRadius="4" 
+                                Padding="12"
+                                Margin="0,8,0,0">
+                            <TextBlock TextWrapping="Wrap" 
+                                       Foreground="White" 
+                                       FontSize="12">
+                                <Run Text="?? Mentor Tip: " FontWeight="SemiBold" />
+                                <Run Text="Check Package.appxmanifest for 'internetClient' capability and review the HttpApiService class code for proper HttpClient usage with async/await patterns." />
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+        </StackPanel>
+    </ScrollViewer>
+</Page>

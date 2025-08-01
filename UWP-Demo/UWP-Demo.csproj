@@ -147,6 +147,9 @@
     <Compile Include="Views\MobilePage.xaml.cs">
       <DependentUpon>MobilePage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\NetworkPage.xaml.cs">
+      <DependentUpon>NetworkPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ReportsPage.xaml.cs">
       <DependentUpon>ReportsPage.xaml</DependentUpon>
     </Compile>
@@ -194,6 +197,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\MobilePage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\NetworkPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

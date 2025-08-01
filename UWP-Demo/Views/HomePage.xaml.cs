@@ -289,5 +289,31 @@ namespace UWP_Demo.Views
                 System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to file operations - {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Navigation System: Navigate to network API demo page
+        /// </summary>
+        private void NetworkApiButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Navigation System: Navigate to network API page through MainPage
+                var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+                if (currentFrame?.Content is MainPage mainPage)
+                {
+                    // Navigation System: Find and select the network API navigation item
+                    var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+                    var networkItem = mainPage.FindName("NetworkNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+                    if (navView != null && networkItem != null)
+                    {
+                        navView.SelectedItem = networkItem;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to network API - {ex.Message}");
+            }
+        }
     }
 }

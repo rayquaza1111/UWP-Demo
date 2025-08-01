@@ -40,6 +40,7 @@ namespace UWP_Demo
             { "home", typeof(HomePage) },
             { "customers", typeof(CustomersPage) }, // Navigation System: Dedicated customer page
             { "edit", typeof(EditPage) },
+            { "network", typeof(NetworkPage) }, // Navigation System: HTTP API demonstrations page
             { "fileops", typeof(FileOperationsPage) }, // Navigation System: Dedicated file operations page
             { "reports", typeof(ReportsPage) },
             { "mobile", typeof(MobilePage) },
@@ -53,6 +54,7 @@ namespace UWP_Demo
             { "home", "Home Dashboard" },
             { "customers", "Customer Management" },
             { "edit", "Customer Editor" },
+            { "network", "Network API Demo" },
             { "fileops", "File Operations" },
             { "reports", "Analytics & Reports" },
             { "mobile", "Mobile Synchronization" },
@@ -66,6 +68,7 @@ namespace UWP_Demo
             { "home", "Home" },
             { "customers", "Home > Customers" },
             { "edit", "Home > Customers > Edit" },
+            { "network", "Home > Network API" },
             { "fileops", "Home > File Operations" },
             { "reports", "Home > Reports" },
             { "mobile", "Home > Mobile Sync" },

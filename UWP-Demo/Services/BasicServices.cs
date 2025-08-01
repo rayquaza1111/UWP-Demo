@@ -7,9 +7,470 @@ using System.Collections.ObjectModel;
 // FILE I/O: Required UWP namespaces for file operations
 using Windows.Storage;     // FILE I/O: Provides StorageFile, StorageFolder classes for file system access
 using Newtonsoft.Json;     // FILE I/O: JSON serialization library for converting objects to/from JSON
+// NETWORK API: Required namespaces for HTTP operations
+using System.Net.Http;     // NETWORK API: Provides HttpClient for HTTP requests
+using System.Text;         // NETWORK API: For encoding HTTP request content
 
 namespace UWP_Demo.Services
 {
+    /// <summary>
+    /// NETWORK API: HTTP service for external API communication
+    /// Demonstrates integration with public APIs like JSONPlaceholder
+    /// Shows how to make GET, POST requests and handle responses
+    /// </summary>
+    public class HttpApiService
+    {
+        private readonly HttpClient _httpClient;
+        private readonly HttpLoggingService _logger;
+        private const string JSON_PLACEHOLDER_BASE_URL = "https://jsonplaceholder.typicode.com";
+
+        public HttpApiService()
+        {
+            // NETWORK API: Initialize HttpClient for API requests
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "UWP-Demo-App/1.0");
+            
+            // NETWORK API PROOF: Initialize logging service for mentor verification
+            _logger = new HttpLoggingService();
+            
+            System.Diagnostics.Debug.WriteLine("NETWORK API: HttpApiService initialized with JSONPlaceholder base URL and logging");
+        }
+
+        #region NETWORK API: JSONPlaceholder Demo Endpoints
+
+        /// <summary>
+        /// NETWORK API: Enhanced GET request with detailed logging for mentor verification
+        /// Demonstrates basic HTTP GET operation with comprehensive debugging output
+        /// URL: https://jsonplaceholder.typicode.com/posts
+        /// </summary>
+        public async Task<List<JsonPlaceholderPost>> GetSamplePostsAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("===========================================");
+                System.Diagnostics.Debug.WriteLine("NETWORK API PROOF: Starting GET request to fetch sample posts");
+                System.Diagnostics.Debug.WriteLine($"TIMESTAMP: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                
+                string url = $"{JSON_PLACEHOLDER_BASE_URL}/posts";
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: REQUEST URL = {url}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: HTTP METHOD = GET");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: User-Agent = {_httpClient.DefaultRequestHeaders.UserAgent}");
+                
+                // NETWORK API: Make HTTP GET request with timing
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                HttpResponseMessage response = await _httpClient.GetAsync(url);
+                stopwatch.Stop();
+                
+                // NETWORK API: Read response content as string
+                string jsonContent = await response.Content.ReadAsStringAsync();
+                
+                // NETWORK API PROOF: Log to file for mentor verification
+                await _logger.LogHttpRequestAsync(
+                    method: "GET",
+                    url: url,
+                    statusCode: response.StatusCode,
+                    responseBody: jsonContent,
+                    responseTimeMs: stopwatch.ElapsedMilliseconds
+                );
+                
+                // NETWORK API PROOF: Log detailed response information
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE STATUS = {response.StatusCode} ({(int)response.StatusCode})");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE TIME = {stopwatch.ElapsedMilliseconds}ms");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: CONTENT TYPE = {response.Content.Headers.ContentType}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: CONTENT LENGTH = {response.Content.Headers.ContentLength} bytes");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RECEIVED CONTENT LENGTH = {jsonContent.Length} characters");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: CONTENT PREVIEW = {jsonContent.Substring(0, Math.Min(200, jsonContent.Length))}...");
+                
+                response.EnsureSuccessStatusCode(); // NETWORK API: Throw if not success status
+                
+                // NETWORK API: Parse JSON response to objects
+                var posts = JsonConvert.DeserializeObject<List<JsonPlaceholderPost>>(jsonContent);
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: PARSED OBJECTS COUNT = {posts?.Count ?? 0}");
+                
+                if (posts != null && posts.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: FIRST POST ID = {posts[0].Id}");
+                    System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: FIRST POST TITLE = {posts[0].Title}");
+                    System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: LAST POST ID = {posts[posts.Count - 1].Id}");
+                }
+                
+                System.Diagnostics.Debug.WriteLine("NETWORK API PROOF: GET REQUEST COMPLETED SUCCESSFULLY");
+                System.Diagnostics.Debug.WriteLine("===========================================");
+                
+                return posts ?? new List<JsonPlaceholderPost>();
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: HTTP request failed - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: Stack trace = {ex.StackTrace}");
+                
+                // NETWORK API PROOF: Log error to file
+                await _logger.LogHttpRequestAsync("GET", $"{JSON_PLACEHOLDER_BASE_URL}/posts", 
+                    responseBody: $"ERROR: {ex.Message}");
+                
+                return new List<JsonPlaceholderPost>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: General error - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: Stack trace = {ex.StackTrace}");
+                return new List<JsonPlaceholderPost>();
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: GET request - Fetch sample users from JSONPlaceholder
+        /// Demonstrates fetching user data that could be integrated with your customer system
+        /// URL: https://jsonplaceholder.typicode.com/users
+        /// </summary>
+        public async Task<List<JsonPlaceholderUser>> GetSampleUsersAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("NETWORK API: Starting GET request to fetch sample users");
+                
+                string url = $"{JSON_PLACEHOLDER_BASE_URL}/users";
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: GET {url}");
+                
+                // NETWORK API: Make HTTP GET request
+                HttpResponseMessage response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+                
+                // NETWORK API: Read and parse JSON response
+                string jsonContent = await response.Content.ReadAsStringAsync();
+                var users = JsonConvert.DeserializeObject<List<JsonPlaceholderUser>>(jsonContent);
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: Successfully fetched {users?.Count ?? 0} users");
+                
+                return users ?? new List<JsonPlaceholderUser>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API ERROR: Failed to fetch users - {ex.Message}");
+                return new List<JsonPlaceholderUser>();
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: Enhanced POST request with detailed logging for mentor verification
+        /// Demonstrates HTTP POST with JSON payload and comprehensive debugging output
+        /// URL: https://jsonplaceholder.typicode.com/posts
+        /// </summary>
+        public async Task<JsonPlaceholderPost> CreateSamplePostAsync(string title, string body, int userId = 1)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("===========================================");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: Starting POST request to create post");
+                System.Diagnostics.Debug.WriteLine($"TIMESTAMP: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                
+                // NETWORK API: Create request payload
+                var newPost = new
+                {
+                    title = title,
+                    body = body,
+                    userId = userId
+                };
+                
+                string jsonPayload = JsonConvert.SerializeObject(newPost, Formatting.Indented);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                
+                string url = $"{JSON_PLACEHOLDER_BASE_URL}/posts";
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: REQUEST URL = {url}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: HTTP METHOD = POST");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: CONTENT TYPE = application/json");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: PAYLOAD SIZE = {jsonPayload.Length} characters");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: REQUEST PAYLOAD = {jsonPayload}");
+                
+                // NETWORK API: Make HTTP POST request with timing
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                HttpResponseMessage response = await _httpClient.PostAsync(url, content);
+                stopwatch.Stop();
+                
+                // NETWORK API: Parse response
+                string responseJson = await response.Content.ReadAsStringAsync();
+                
+                // NETWORK API PROOF: Log to file for mentor verification
+                await _logger.LogHttpRequestAsync(
+                    method: "POST",
+                    url: url,
+                    requestBody: jsonPayload,
+                    statusCode: response.StatusCode,
+                    responseBody: responseJson,
+                    responseTimeMs: stopwatch.ElapsedMilliseconds
+                );
+                
+                // NETWORK API PROOF: Log detailed response information
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE STATUS = {response.StatusCode} ({(int)response.StatusCode})");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE TIME = {stopwatch.ElapsedMilliseconds}ms");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE CONTENT TYPE = {response.Content.Headers.ContentType}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: RESPONSE CONTENT = {responseJson}");
+                
+                response.EnsureSuccessStatusCode();
+                
+                var createdPost = JsonConvert.DeserializeObject<JsonPlaceholderPost>(responseJson);
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: CREATED POST ID = {createdPost?.Id}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF: SERVER ASSIGNED ID = {createdPost?.Id} (Proves server processing)");
+                System.Diagnostics.Debug.WriteLine("NETWORK API PROOF: POST REQUEST COMPLETED SUCCESSFULLY");
+                System.Diagnostics.Debug.WriteLine("===========================================");
+                
+                return createdPost;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: Failed to create post - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"NETWORK API PROOF ERROR: Stack trace = {ex.StackTrace}");
+                
+                // NETWORK API PROOF: Log error to file
+                await _logger.LogHttpRequestAsync("POST", $"{JSON_PLACEHOLDER_BASE_URL}/posts", 
+                    responseBody: $"ERROR: {ex.Message}");
+                
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: GET request with specific ID - Fetch single post
+        /// Demonstrates parameterized API calls
+        /// URL: https://jsonplaceholder.typicode.com/posts/{id}
+        /// </summary>
+        public async Task<JsonPlaceholderPost> GetPostByIdAsync(int postId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: Starting GET request for post ID: {postId}");
+                
+                string url = $"{JSON_PLACEHOLDER_BASE_URL}/posts/{postId}";
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: GET {url}");
+                
+                HttpResponseMessage response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+                
+                string jsonContent = await response.Content.ReadAsStringAsync();
+                var post = JsonConvert.DeserializeObject<JsonPlaceholderPost>(jsonContent);
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: Successfully fetched post: {post?.Title}");
+                
+                return post;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API ERROR: Failed to fetch post {postId} - {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: Test connectivity to JSONPlaceholder API
+        /// Simple health check to verify internet connection and API availability
+        /// </summary>
+        public async Task<bool> TestApiConnectivityAsync()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("NETWORK API: Testing connectivity to JSONPlaceholder API");
+                
+                string url = $"{JSON_PLACEHOLDER_BASE_URL}/posts/1";
+                HttpResponseMessage response = await _httpClient.GetAsync(url);
+                
+                bool isConnected = response.IsSuccessStatusCode;
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: Connectivity test result: {isConnected}");
+                
+                return isConnected;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"NETWORK API: Connectivity test failed - {ex.Message}");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region NETWORK API: Model Classes for JSONPlaceholder
+
+        /// <summary>
+        /// NETWORK API: Model for JSONPlaceholder post data
+        /// Represents a blog post from the demo API
+        /// </summary>
+        public class JsonPlaceholderPost
+        {
+            [JsonProperty("id")]
+            public int Id { get; set; }
+
+            [JsonProperty("userId")]
+            public int UserId { get; set; }
+
+            [JsonProperty("title")]
+            public string Title { get; set; } = "";
+
+            [JsonProperty("body")]
+            public string Body { get; set; } = "";
+
+            public override string ToString()
+            {
+                return $"Post {Id}: {Title}";
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: Model for JSONPlaceholder user data
+        /// Represents a user from the demo API (could be converted to Customer)
+        /// </summary>
+        public class JsonPlaceholderUser
+        {
+            [JsonProperty("id")]
+            public int Id { get; set; }
+
+            [JsonProperty("name")]
+            public string Name { get; set; } = "";
+
+            [JsonProperty("username")]
+            public string Username { get; set; } = "";
+
+            [JsonProperty("email")]
+            public string Email { get; set; } = "";
+
+            [JsonProperty("phone")]
+            public string Phone { get; set; } = "";
+
+            [JsonProperty("website")]
+            public string Website { get; set; } = "";
+
+            [JsonProperty("company")]
+            public JsonPlaceholderCompany Company { get; set; }
+
+            public override string ToString()
+            {
+                return $"User {Id}: {Name} ({Email})";
+            }
+
+            /// <summary>
+            /// NETWORK API: Convert JSONPlaceholder user to local Customer object
+            /// Demonstrates data transformation from external API to internal model
+            /// </summary>
+            public Customer ToCustomer()
+            {
+                var nameParts = Name.Split(' ');
+                return new Customer
+                {
+                    FirstName = nameParts.Length > 0 ? nameParts[0] : Name,
+                    LastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "",
+                    Email = Email,
+                    Phone = Phone,
+                    Company = Company?.Name ?? "",
+                    DateCreated = DateTime.Now,
+                    LastModified = DateTime.Now
+                };
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API: Model for JSONPlaceholder company data
+        /// Nested object within user data
+        /// </summary>
+        public class JsonPlaceholderCompany
+        {
+            [JsonProperty("name")]
+            public string Name { get; set; } = "";
+
+            [JsonProperty("catchPhrase")]
+            public string CatchPhrase { get; set; } = "";
+
+            [JsonProperty("bs")]
+            public string Bs { get; set; } = "";
+        }
+
+        #endregion
+
+        #region NETWORK API: Cleanup
+
+        /// <summary>
+        /// NETWORK API: Dispose HttpClient resources
+        /// Important for proper resource management
+        /// </summary>
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
+            System.Diagnostics.Debug.WriteLine("NETWORK API: HttpApiService disposed");
+        }
+
+        #endregion
+
+        #region NETWORK API PROOF: Access to HTTP Logs
+
+        /// <summary>
+        /// NETWORK API PROOF: Get HTTP log file path for mentor verification
+        /// Returns the location of the detailed HTTP request/response log
+        /// </summary>
+        public async Task<string> GetHttpLogFilePathAsync()
+        {
+            return await _logger.GetLogFilePathAsync();
+        }
+
+        /// <summary>
+        /// NETWORK API PROOF: Get recent HTTP log entries for display
+        /// Returns formatted log entries showing actual HTTP communication
+        /// </summary>
+        public async Task<string> GetRecentHttpLogsAsync()
+        {
+            return await _logger.GetRecentLogEntriesAsync();
+        }
+
+        /// <summary>
+        /// NETWORK API PROOF: Clear HTTP logs for fresh testing
+        /// Allows mentor to see clean test results
+        /// </summary>
+        public async Task ClearHttpLogsAsync()
+        {
+            await _logger.ClearLogAsync();
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Simple dialog service for demo purposes
+    /// </summary>
+    public class DialogService
+    {
+        public async Task<Windows.UI.Xaml.Controls.ContentDialogResult> ShowConfirmationAsync(
+            string title, string message, string primaryText, string secondaryText)
+        {
+            var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+            {
+                Title = title,
+                Content = message,
+                PrimaryButtonText = primaryText,
+                SecondaryButtonText = secondaryText
+            };
+
+            return await dialog.ShowAsync();
+        }
+
+        public async Task ShowMessageAsync(string title, string message)
+        {
+            var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK"
+            };
+
+            await dialog.ShowAsync();
+        }
+    };
+
+    /// <summary>
+    /// Simple navigation service for demo purposes
+    /// </summary>
+    public class NavigationService
+    {
+        public void NavigateTo(Type pageType, object parameter = null)
+        {
+            var frame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
+            frame?.Navigate(pageType, parameter);
+        }
+    };
+
     /// <summary>
     /// FILE I/O: Customer service with complete file persistence functionality
     /// Automatically saves and loads customer data to/from JSON file using UWP Storage APIs
@@ -346,46 +807,151 @@ namespace UWP_Demo.Services
     }
 
     /// <summary>
-    /// Simple dialog service for demo purposes
+    /// NETWORK API: HTTP Logging Service for mentor verification
+    /// Logs all HTTP requests and responses to a file for technical proof
+    /// Creates detailed audit trail of network operations
     /// </summary>
-    public class DialogService
+    public class HttpLoggingService
     {
-        public async Task<Windows.UI.Xaml.Controls.ContentDialogResult> ShowConfirmationAsync(
-            string title, string message, string primaryText, string secondaryText)
-        {
-            var dialog = new Windows.UI.Xaml.Controls.ContentDialog
-            {
-                Title = title,
-                Content = message,
-                PrimaryButtonText = primaryText,
-                SecondaryButtonText = secondaryText
-            };
+        private readonly StorageFolder _localFolder;
+        private const string LOG_FILE_NAME = "http_api_log.txt";
 
-            return await dialog.ShowAsync();
+        public HttpLoggingService()
+        {
+            _localFolder = ApplicationData.Current.LocalFolder;
         }
 
-        public async Task ShowMessageAsync(string title, string message)
+        /// <summary>
+        /// NETWORK API PROOF: Log HTTP request details to file for mentor verification
+        /// Creates permanent record of API communication
+        /// </summary>
+        public async Task LogHttpRequestAsync(string method, string url, string requestBody = null, 
+            System.Net.HttpStatusCode? statusCode = null, string responseBody = null, long responseTimeMs = 0)
         {
-            var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+            try
             {
-                Title = title,
-                Content = message,
-                CloseButtonText = "OK"
-            };
+                var logEntry = new StringBuilder();
+                logEntry.AppendLine("================================");
+                logEntry.AppendLine($"HTTP API LOG ENTRY");
+                logEntry.AppendLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                logEntry.AppendLine($"Method: {method}");
+                logEntry.AppendLine($"URL: {url}");
+                logEntry.AppendLine($"User-Agent: UWP-Demo-App/1.0");
+                
+                if (!string.IsNullOrEmpty(requestBody))
+                {
+                    logEntry.AppendLine($"Request Body: {requestBody}");
+                }
+                
+                if (statusCode.HasValue)
+                {
+                    logEntry.AppendLine($"Response Status: {statusCode} ({(int)statusCode})");
+                    logEntry.AppendLine($"Response Time: {responseTimeMs}ms");
+                }
+                
+                if (!string.IsNullOrEmpty(responseBody))
+                {
+                    // Log first 500 characters of response
+                    var preview = responseBody.Length > 500 ? responseBody.Substring(0, 500) + "..." : responseBody;
+                    logEntry.AppendLine($"Response Preview: {preview}");
+                    logEntry.AppendLine($"Response Length: {responseBody.Length} characters");
+                }
+                
+                logEntry.AppendLine("================================");
+                logEntry.AppendLine();
 
-            await dialog.ShowAsync();
+                // Write to log file
+                await AppendToLogFileAsync(logEntry.ToString());
+                
+                System.Diagnostics.Debug.WriteLine($"HTTP LOGGING: Entry written to {LOG_FILE_NAME}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HTTP LOGGING ERROR: {ex.Message}");
+            }
         }
-    }
 
-    /// <summary>
-    /// Simple navigation service for demo purposes
-    /// </summary>
-    public class NavigationService
-    {
-        public void NavigateTo(Type pageType, object parameter = null)
+        /// <summary>
+        /// NETWORK API PROOF: Append log entry to persistent file
+        /// </summary>
+        private async Task AppendToLogFileAsync(string logEntry)
         {
-            var frame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
-            frame?.Navigate(pageType, parameter);
+            try
+            {
+                var logFile = await _localFolder.CreateFileAsync(LOG_FILE_NAME, CreationCollisionOption.OpenIfExists);
+                await FileIO.AppendTextAsync(logFile, logEntry);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HTTP LOGGING FILE ERROR: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API PROOF: Get log file path for mentor verification
+        /// Returns the full path to the HTTP log file
+        /// </summary>
+        public async Task<string> GetLogFilePathAsync()
+        {
+            try
+            {
+                var files = await _localFolder.GetFilesAsync();
+                var logFile = files.FirstOrDefault(f => f.Name == LOG_FILE_NAME);
+                return logFile?.Path ?? "Log file not found";
+            }
+            catch (Exception ex)
+            {
+                return $"Error getting log path: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API PROOF: Get recent log entries for display
+        /// </summary>
+        public async Task<string> GetRecentLogEntriesAsync(int maxEntries = 5)
+        {
+            try
+            {
+                var files = await _localFolder.GetFilesAsync();
+                var logFile = files.FirstOrDefault(f => f.Name == LOG_FILE_NAME);
+                
+                if (logFile != null)
+                {
+                    var content = await FileIO.ReadTextAsync(logFile);
+                    var entries = content.Split(new[] { "================================" }, StringSplitOptions.RemoveEmptyEntries);
+                    
+                    var recentEntries = entries.TakeLast(maxEntries).ToList();
+                    return string.Join("\n================================\n", recentEntries);
+                }
+                
+                return "No log entries found";
+            }
+            catch (Exception ex)
+            {
+                return $"Error reading log: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// NETWORK API PROOF: Clear log file for fresh testing
+        /// </summary>
+        public async Task ClearLogAsync()
+        {
+            try
+            {
+                var files = await _localFolder.GetFilesAsync();
+                var logFile = files.FirstOrDefault(f => f.Name == LOG_FILE_NAME);
+                
+                if (logFile != null)
+                {
+                    await logFile.DeleteAsync();
+                    System.Diagnostics.Debug.WriteLine("HTTP LOGGING: Log file cleared");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HTTP LOGGING CLEAR ERROR: {ex.Message}");
+            }
         }
     }
 }

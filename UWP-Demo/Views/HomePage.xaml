@@ -142,6 +142,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
                     <!-- Customers section -->
@@ -169,7 +170,7 @@
                         </StackPanel>
                     </Border>
                     
-                    <!-- File Operations section -->
+                    <!-- Network API section -->
                     <Border Grid.Row="0" Grid.Column="1"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -177,6 +178,31 @@
                             CornerRadius="8"
                             Padding="20"
                             Margin="8,0,0,8">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <SymbolIcon Symbol="Globe" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="Network API Demo" FontSize="16" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <TextBlock Text="Test HTTP requests, connect to JSONPlaceholder API, and import external data into your customer database."
+                                       TextWrapping="Wrap"
+                                       FontSize="14"
+                                       Opacity="0.8" />
+                            <Button x:Name="NetworkApiButton"
+                                    Content="Try Network API" 
+                                    HorizontalAlignment="Stretch"
+                                    Style="{ThemeResource AccentButtonStyle}"
+                                    Click="NetworkApiButton_Click" />
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- File Operations section -->
+                    <Border Grid.Row="1" Grid.Column="0"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20"
+                            Margin="0,8,8,8">
                         <StackPanel Spacing="12">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <SymbolIcon Symbol="Folder" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
@@ -195,13 +221,13 @@
                     </Border>
                     
                     <!-- Reports section -->
-                    <Border Grid.Row="1" Grid.Column="0"
+                    <Border Grid.Row="1" Grid.Column="1"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="20"
-                            Margin="0,8,8,0">
+                            Margin="8,8,0,8">
                         <StackPanel Spacing="12">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <SymbolIcon Symbol="Library" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
@@ -218,13 +244,13 @@
                     </Border>
                     
                     <!-- Settings section -->
-                    <Border Grid.Row="1" Grid.Column="1"
+                    <Border Grid.Row="2" Grid.Column="0"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="20"
-                            Margin="8,8,0,0">
+                            Margin="0,8,8,0">
                         <StackPanel Spacing="12">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <SymbolIcon Symbol="Setting" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
@@ -237,6 +263,31 @@
                             <Button Content="Open Settings" 
                                     HorizontalAlignment="Stretch"
                                     Click="SettingsButton_Click" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Internet Capabilities Info -->
+                    <Border Grid.Row="2" Grid.Column="1"
+                            Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}"
+                            BorderThickness="2"
+                            CornerRadius="8"
+                            Padding="20"
+                            Margin="8,8,0,0">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <FontIcon Glyph="&#xE968;" Foreground="White" />
+                                <TextBlock Text="Internet Capabilities" FontSize="16" FontWeight="SemiBold" Foreground="White" />
+                            </StackPanel>
+                            <TextBlock Text="This app has Internet (Client) capability enabled in the manifest, allowing HTTP requests to external APIs."
+                                       TextWrapping="Wrap"
+                                       FontSize="14"
+                                       Foreground="White"
+                                       Opacity="0.9" />
+                            <TextBlock Text="? JSONPlaceholder API Ready"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="White" />
                         </StackPanel>
                     </Border>
                 </Grid>
