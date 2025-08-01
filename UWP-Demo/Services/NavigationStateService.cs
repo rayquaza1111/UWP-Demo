@@ -161,9 +161,9 @@ namespace UWP_Demo.Services
         #region Navigation History
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Navigation history for breadcrumb and back navigation
-        /// ?? Tracks: Page navigation history with timestamps
-        /// ?? Usage: Smart back navigation, breadcrumb display, navigation analytics
+        /// Navigation System: Navigation history for breadcrumb and back navigation
+        /// Navigation System: Tracks: Page navigation history with timestamps
+        /// Navigation System: Usage: Smart back navigation, breadcrumb display, navigation analytics
         /// </summary>
         public class NavigationEntry
         {
@@ -174,8 +174,8 @@ namespace UWP_Demo.Services
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Gets or sets the navigation history
-        /// ?? Maintains: List of recent page navigations for smart back navigation
+        /// Navigation System: Gets or sets the navigation history
+        /// Navigation System: Maintains: List of recent page navigations for smart back navigation
         /// </summary>
         public List<NavigationEntry> NavigationHistory
         {
@@ -187,13 +187,13 @@ namespace UWP_Demo.Services
                     if (value != null)
                     {
                         var history = JsonConvert.DeserializeObject<List<NavigationEntry>>(value.ToString());
-                        System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Retrieved navigation history with {history?.Count ?? 0} entries");
+                        System.Diagnostics.Debug.WriteLine($"Navigation System: Retrieved navigation history with {history?.Count ?? 0} entries");
                         return history ?? new List<NavigationEntry>();
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to deserialize navigation history - {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to deserialize navigation history - {ex.Message}");
                 }
                 return new List<NavigationEntry>();
             }
@@ -203,7 +203,7 @@ namespace UWP_Demo.Services
                 {
                     if (value != null)
                     {
-                        // ?? STATE MANAGEMENT: Keep only last 10 navigation entries to prevent storage bloat
+                        // Navigation System: Keep only last 10 navigation entries to prevent storage bloat
                         if (value.Count > 10)
                         {
                             value = value.GetRange(value.Count - 10, 10);
@@ -211,17 +211,17 @@ namespace UWP_Demo.Services
                         
                         var json = JsonConvert.SerializeObject(value);
                         _localSettings.Values[NAVIGATION_HISTORY_KEY] = json;
-                        System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Stored navigation history with {value.Count} entries");
+                        System.Diagnostics.Debug.WriteLine($"Navigation System: Stored navigation history with {value.Count} entries");
                     }
                     else
                     {
                         _localSettings.Values.Remove(NAVIGATION_HISTORY_KEY);
-                        System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Cleared navigation history");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Cleared navigation history");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to serialize navigation history - {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to serialize navigation history - {ex.Message}");
                 }
             }
         }
@@ -259,7 +259,7 @@ namespace UWP_Demo.Services
                     };
                 }
                 
-                // ?? STATE MANAGEMENT: Record this action in navigation history
+                // Navigation System: Record this action in navigation history
                 AddNavigationEntry("EditPage", $"Edit {customer?.FullName}", $"CustomerId={customer?.Id}");
                 
                 System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Customer state prepared for edit form");
@@ -340,7 +340,7 @@ namespace UWP_Demo.Services
                 
                 SelectedCustomer = null;
                 CurrentFormData = null;
-                NavigationHistory = new List<NavigationEntry>();
+                NavigationHistory = new List<NavigationEntry>(); // Navigation System: Clear navigation history
                 _localSettings.Values.Remove(FORM_DIRTY_KEY);
                 _localSettings.Values.Remove(LAST_PAGE_KEY);
                 _localSettings.Values.Remove(EDIT_MODE_KEY);
@@ -354,8 +354,8 @@ namespace UWP_Demo.Services
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Add entry to navigation history
-        /// ?? Tracks: Page visits for smart navigation and analytics
+        /// Navigation System: Add entry to navigation history
+        /// Navigation System: Tracks: Page visits for smart navigation and analytics
         /// </summary>
         public void AddNavigationEntry(string pageType, string pageTitle, string parameters = "")
         {
@@ -371,11 +371,11 @@ namespace UWP_Demo.Services
                 });
                 NavigationHistory = history;
                 
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Added navigation entry: {pageTitle}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System: Added navigation entry: {pageTitle}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to add navigation entry - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to add navigation entry - {ex.Message}");
             }
         }
 

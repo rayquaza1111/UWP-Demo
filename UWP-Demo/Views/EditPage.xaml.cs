@@ -45,7 +45,7 @@ namespace UWP_Demo.Views
         /// <summary>
         /// ?? CUSTOMER SELECTION: Handle page navigation and setup customer dropdown
         /// ?? Features: Load customer list, auto-select first customer, restore state
-        /// ?? Called: When navigating to this page with or without parameters
+        /// Navigation System: Called: When navigating to this page with or without parameters
         /// </summary>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -58,7 +58,7 @@ namespace UWP_Demo.Views
                 // ?? CUSTOMER SELECTION: Load all customers first
                 await LoadCustomersAsync();
                 
-                // ?? STATE MANAGEMENT: Add navigation entry
+                // Navigation System: Add navigation entry
                 _stateService.AddNavigationEntry("EditPage", "Edit Customer", e.Parameter?.ToString() ?? "");
                 
                 // ?? CUSTOMER SELECTION: Check for passed customer parameter
@@ -82,26 +82,26 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Handle page navigation away (save state)
-        /// ?? Saves: Current form data if user has made changes
-        /// ?? Called: When navigating away from this page
+        /// Navigation System: Handle page navigation away (save state)
+        /// Navigation System: Saves: Current form data if user has made changes
+        /// Navigation System: Called: When navigating away from this page
         /// </summary>
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: EditPage navigating away, saving state");
+                System.Diagnostics.Debug.WriteLine("Navigation System: EditPage navigating away, saving state");
                 
                 // ?? STATE MANAGEMENT: Save current form state if dirty
                 if (_isFormDirty && !_isLoadingState)
                 {
                     SaveCurrentFormState();
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Form state saved due to navigation away");
+                    System.Diagnostics.Debug.WriteLine("Navigation System: Form state saved due to navigation away");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed during OnNavigatingFrom - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed during OnNavigatingFrom - {ex.Message}");
             }
 
             base.OnNavigatingFrom(e);
@@ -502,7 +502,7 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// Navigate back to previous page
+        /// Navigation System: Navigate back to previous page
         /// </summary>
         private void NavigateBack()
         {
@@ -510,16 +510,16 @@ namespace UWP_Demo.Views
             {
                 if (Frame.CanGoBack)
                 {
-                    Frame.GoBack();
+                    Frame.GoBack(); // Navigation System: Use frame's back navigation
                 }
                 else
                 {
-                    Frame.Navigate(typeof(HomePage));
+                    Frame.Navigate(typeof(HomePage)); // Navigation System: Fallback to HomePage
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate back - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate back - {ex.Message}");
             }
         }
 

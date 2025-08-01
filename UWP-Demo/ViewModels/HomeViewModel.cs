@@ -267,35 +267,35 @@ namespace UWP_Demo.ViewModels
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Navigate to edit customer with state preservation
-        /// ?? Enhanced: Use MainPage's direct navigation methods
-        /// ?? Called when user clicks Edit button on customer list
+        /// Navigation System: Navigate to edit customer with state preservation
+        /// Navigation System: Enhanced: Use MainPage's direct navigation methods
+        /// Navigation System: Called when user clicks Edit button on customer list
         /// </summary>
         private void NavigateToEditCustomer(Customer customer)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: HomeViewModel navigating to edit customer: {customer?.FullName}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System: HomeViewModel navigating to edit customer: {customer?.FullName}");
                 
                 if (customer != null)
                 {
-                    // ?? NAVIGATION: Try to use MainPage's direct navigation method
+                    // Navigation System: Try to use MainPage's direct navigation method
                     try
                     {
                         var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                         if (currentFrame?.Content is MainPage mainPage)
                         {
                             mainPage.NavigateToEditWithCustomer(customer);
-                            System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully used MainPage.NavigateToEditWithCustomer");
+                            System.Diagnostics.Debug.WriteLine("Navigation System: Successfully used MainPage.NavigateToEditWithCustomer");
                             return;
                         }
                     }
                     catch (Exception navEx)
                     {
-                        System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: MainPage navigation failed - {navEx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Navigation System: MainPage navigation failed - {navEx.Message}");
                     }
                     
-                    // ?? FALLBACK: Store state and show informative message
+                    // Navigation System: FALLBACK: Store state and show informative message
                     var stateService = NavigationStateService.Instance;
                     stateService.SetSelectedCustomerForEdit(customer);
                     
@@ -304,43 +304,43 @@ namespace UWP_Demo.ViewModels
                         $"Please navigate to 'Customer Editor' from the main menu to edit this customer.\n\n" +
                         $"The customer data has been stored and will be automatically loaded.");
                     
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Customer edit navigation completed with fallback");
+                    System.Diagnostics.Debug.WriteLine("Navigation System: Customer edit navigation completed with fallback");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to edit customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to edit customer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Navigate to new customer creation
-        /// ?? Enhanced: Use MainPage's direct navigation methods
-        /// ?? Called when user wants to create a new customer
+        /// Navigation System: Navigate to new customer creation
+        /// Navigation System: Enhanced: Use MainPage's direct navigation methods
+        /// Navigation System: Called when user wants to create a new customer
         /// </summary>
         private void NavigateToNewCustomer()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: HomeViewModel navigating to new customer");
+                System.Diagnostics.Debug.WriteLine("Navigation System: HomeViewModel navigating to new customer");
                 
-                // ?? NAVIGATION: Try to use MainPage's direct navigation method
+                // Navigation System: Try to use MainPage's direct navigation method
                 try
                 {
                     var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                     if (currentFrame?.Content is MainPage mainPage)
                     {
                         mainPage.NavigateToNewCustomer();
-                        System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully used MainPage.NavigateToNewCustomer");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Successfully used MainPage.NavigateToNewCustomer");
                         return;
                     }
                 }
                 catch (Exception navEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: MainPage navigation failed - {navEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Navigation System: MainPage navigation failed - {navEx.Message}");
                 }
                 
-                // ?? FALLBACK: Clear state and show informative message
+                // Navigation System: FALLBACK: Clear state and show informative message
                 var stateService = NavigationStateService.Instance;
                 stateService.ClearAllState();
                 
@@ -349,11 +349,11 @@ namespace UWP_Demo.ViewModels
                     "Please navigate to 'Customer Editor' from the main menu to create a new customer.\n\n" +
                     "The form has been cleared and is ready for new customer data.");
                 
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: New customer navigation completed with fallback");
+                System.Diagnostics.Debug.WriteLine("Navigation System: New customer navigation completed with fallback");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to navigate to new customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to new customer - {ex.Message}");
             }
         }
 

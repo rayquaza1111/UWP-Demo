@@ -137,30 +137,30 @@ namespace UWP_Demo.Views
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine(">>> Back button clicked");
+                System.Diagnostics.Debug.WriteLine("Navigation System: Back button clicked");
                 
-                // Simple navigation back
+                // Navigation System: Simple navigation back
                 if (Frame != null)
                 {
                     if (Frame.CanGoBack)
                     {
                         Frame.GoBack();
-                        System.Diagnostics.Debug.WriteLine(">>> Navigated back via GoBack()");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Navigated back via GoBack()");
                     }
                     else
                     {
                         Frame.Navigate(typeof(HomePage));
-                        System.Diagnostics.Debug.WriteLine(">>> Navigated back via Navigate(HomePage)");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Navigated back via Navigate(HomePage)");
                     }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine(">>> Frame is null!");
+                    System.Diagnostics.Debug.WriteLine("Navigation System: Frame is null!");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($">>> Back navigation error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Back navigation error: {ex.Message}");
             }
         }
 
@@ -387,18 +387,18 @@ namespace UWP_Demo.Views
                 var stateService = UWP_Demo.Services.NavigationStateService.Instance;
                 stateService.SetSelectedCustomerForEdit(testCustomer);
                 
-                // ?? STATE MANAGEMENT: Navigate to EditPage with test customer
+                // Navigation System: Navigate to EditPage with test customer
                 try
                 {
                     if (Frame != null)
                     {
                         Frame.Navigate(typeof(UWP_Demo.Views.EditPage), testCustomer);
-                        System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Successfully navigated to EditPage with test customer");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Successfully navigated to EditPage with test customer");
                     }
                 }
                 catch (Exception navEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Navigation failed - {navEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Navigation System: Navigation failed - {navEx.Message}");
                     
                     // Update status to show test completed
                     if (StatusDisplay != null)

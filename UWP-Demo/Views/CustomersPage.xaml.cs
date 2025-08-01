@@ -19,9 +19,9 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? NAVIGATION: Handle direct Edit button click (fallback method)
-        /// ?? Called when XAML binding fails, provides direct navigation
-        /// ?? Uses MainPage's navigation system for consistency
+        /// Navigation System: Handle direct Edit button click (fallback method)
+        /// Navigation System: Called when XAML binding fails, provides direct navigation
+        /// Navigation System: Uses MainPage's navigation system for consistency
         /// </summary>
         public void EditCustomer_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
@@ -33,56 +33,56 @@ namespace UWP_Demo.Views
                 
                 if (customer != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: CustomersPage Edit button clicked for {customer.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"Navigation System: CustomersPage Edit button clicked for {customer.FullName}");
                     
-                    // Navigate using MainPage's method
+                    // Navigation System: Navigate using MainPage's method
                     NavigateToEditCustomer(customer);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? NAVIGATION ERROR: Edit button click failed - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Edit button click failed - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? NAVIGATION: Navigate to edit customer through MainPage
-        /// ?? Enhanced: Use MainPage's NavigationView system
-        /// ?? Stores state and navigates properly
+        /// Navigation System: Navigate to edit customer through MainPage
+        /// Navigation System: Enhanced: Use MainPage's NavigationView system
+        /// Navigation System: Stores state and navigates properly
         /// </summary>
         private void NavigateToEditCustomer(Customer customer)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"?? NAVIGATION: CustomersPage navigating to edit customer: {customer?.FullName}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System: CustomersPage navigating to edit customer: {customer?.FullName}");
                 
                 if (customer != null)
                 {
-                    // Store customer state for editing
+                    // ?? STATE MANAGEMENT: Store customer state for editing
                     var stateService = NavigationStateService.Instance;
                     stateService.SetSelectedCustomerForEdit(customer);
                     
-                    // Navigate through MainPage's system
+                    // Navigation System: Navigate through MainPage's system
                     var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                     if (currentFrame?.Content is MainPage mainPage)
                     {
                         mainPage.NavigateToEditWithCustomer(customer);
-                        System.Diagnostics.Debug.WriteLine("?? NAVIGATION: Successfully used MainPage.NavigateToEditWithCustomer from CustomersPage");
+                        System.Diagnostics.Debug.WriteLine("Navigation System: Successfully used MainPage.NavigateToEditWithCustomer from CustomersPage");
                     }
                     else
                     {
-                        // Fallback: Direct frame navigation
+                        // Navigation System: Fallback: Direct frame navigation
                         if (Frame != null)
                         {
                             Frame.Navigate(typeof(EditPage), customer);
-                            System.Diagnostics.Debug.WriteLine("?? FALLBACK: Direct navigation to EditPage from CustomersPage");
+                            System.Diagnostics.Debug.WriteLine("Navigation System: FALLBACK: Direct navigation to EditPage from CustomersPage");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? NAVIGATION ERROR: Failed to navigate to edit customer from CustomersPage - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to edit customer from CustomersPage - {ex.Message}");
             }
         }
     }
