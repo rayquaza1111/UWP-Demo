@@ -6,15 +6,12 @@ namespace UWP_Demo.Services
 {
     /// <summary>
     /// Service for managing application settings with persistent storage
-    /// Uses ApplicationDataContainer to save/load user preferences
     /// </summary>
     public class SettingsService
     {
         private static SettingsService _instance;
-        // THEME PERSISTENCE: Reference to local settings storage for saving/loading theme preferences
         private readonly ApplicationDataContainer _localSettings;
 
-        // THEME PERSISTENCE: Setting keys for ApplicationDataContainer storage
         private const string THEME_SETTING_KEY = "AppTheme";
         private const string NOTIFICATIONS_SETTING_KEY = "NotificationsEnabled";
         private const string AUTOSAVE_SETTING_KEY = "AutoSaveEnabled";
@@ -23,7 +20,6 @@ namespace UWP_Demo.Services
 
         private SettingsService()
         {
-            // THEME PERSISTENCE: Get reference to local settings container for saving/loading
             _localSettings = ApplicationData.Current.LocalSettings;
         }
 
@@ -37,17 +33,15 @@ namespace UWP_Demo.Services
         {
             get
             {
-                // THEME PERSISTENCE: Load theme from settings, default to system theme if not set
                 var themeValue = _localSettings.Values[THEME_SETTING_KEY];
                 if (themeValue != null && int.TryParse(themeValue.ToString(), out int theme))
                 {
                     return (ElementTheme)theme;
                 }
-                return ElementTheme.Default; // System default
+                return ElementTheme.Default;
             }
             set
             {
-                // THEME PERSISTENCE: Save theme to persistent storage
                 _localSettings.Values[THEME_SETTING_KEY] = (int)value;
                 
                 // Apply theme immediately
@@ -62,13 +56,10 @@ namespace UWP_Demo.Services
 
         /// <summary>
         /// Gets the current theme as a boolean for toggle switch binding
-        /// True = Dark theme, False = Light theme or Default
         /// </summary>
         public bool IsDarkTheme
         {
-            // THEME PERSISTENCE: Convert theme enum to boolean for UI binding
             get => CurrentTheme == ElementTheme.Dark;
-            // THEME PERSISTENCE: Convert boolean to theme enum and save via CurrentTheme property
             set => CurrentTheme = value ? ElementTheme.Dark : ElementTheme.Light;
         }
 
@@ -84,7 +75,7 @@ namespace UWP_Demo.Services
             get
             {
                 var value = _localSettings.Values[NOTIFICATIONS_SETTING_KEY];
-                return value != null ? (bool)value : true; // Default: enabled
+                return value == null || bool.Parse(value.ToString());
             }
             set
             {
@@ -101,7 +92,7 @@ namespace UWP_Demo.Services
             get
             {
                 var value = _localSettings.Values[AUTOSAVE_SETTING_KEY];
-                return value != null ? (bool)value : true; // Default: enabled
+                return value == null || bool.Parse(value.ToString());
             }
             set
             {
@@ -114,39 +105,51 @@ namespace UWP_Demo.Services
 
         #region Theme Management
 
-        /// <summary>
-        /// Event raised when theme changes
-        /// </summary>
         public event EventHandler<ElementTheme> ThemeChanged;
 
         /// <summary>
-        /// Apply the specified theme to the current window
+        /// Apply theme to the application
         /// </summary>
-        /// <param name="theme">Theme to apply</param>
         public void ApplyTheme(ElementTheme theme)
         {
             try
             {
-                // THEME PERSISTENCE: Apply loaded/saved theme to the UI
                 if (Window.Current?.Content is FrameworkElement rootElement)
                 {
                     rootElement.RequestedTheme = theme;
-                    System.Diagnostics.Debug.WriteLine($"SettingsService: Applied theme {theme} to window");
+                    System.Diagnostics.Debug.WriteLine($"SettingsService: Applied theme {theme} to application");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SettingsService: Error applying theme - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Failed to apply theme - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Toggle between Light and Dark themes
+        /// Get theme display name for UI
         /// </summary>
-        public void ToggleTheme()
+        public string GetThemeDisplayName(ElementTheme theme)
         {
-            // THEME PERSISTENCE: Toggle theme and automatically save via CurrentTheme setter
-            CurrentTheme = CurrentTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+            switch (theme)
+            {
+                case ElementTheme.Default:
+                    return "System Default";
+                case ElementTheme.Light:
+                    return "Light";
+                case ElementTheme.Dark:
+                    return "Dark";
+                default:
+                    return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// Get current theme name
+        /// </summary>
+        public string GetThemeName()
+        {
+            return GetThemeDisplayName(CurrentTheme);
         }
 
         /// <summary>
@@ -154,49 +157,37 @@ namespace UWP_Demo.Services
         /// </summary>
         public void InitializeTheme()
         {
-            // THEME PERSISTENCE: Load and apply saved theme on app startup
-            ApplyTheme(CurrentTheme);
-            System.Diagnostics.Debug.WriteLine($"SettingsService: Initialized with theme {CurrentTheme}");
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Get a friendly name for the current theme
-        /// </summary>
-        public string GetThemeName()
-        {
-            // C# 7.3 compatible switch statement
-            switch (CurrentTheme)
+            try
             {
-                case ElementTheme.Light:
-                    return "Light";
-                case ElementTheme.Dark:
-                    return "Dark";
-                case ElementTheme.Default:
-                    return "System Default";
-                default:
-                    return "Unknown";
+                ApplyTheme(CurrentTheme);
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Theme initialized to {GetThemeName()}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Failed to initialize theme - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Reset all settings to defaults
+        /// Toggle between light and dark theme
         /// </summary>
-        public void ResetToDefaults()
+        public void ToggleTheme()
         {
-            // THEME PERSISTENCE: Reset theme to default and save
-            CurrentTheme = ElementTheme.Default;
-            NotificationsEnabled = true;
-            AutoSaveEnabled = true;
-            
-            System.Diagnostics.Debug.WriteLine("SettingsService: Reset all settings to defaults");
+            CurrentTheme = CurrentTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
         }
 
         /// <summary>
-        /// Get summary of current settings for debugging
+        /// Reset settings to defaults
+        /// </summary>
+        public void ResetToDefaults()
+        {
+            CurrentTheme = ElementTheme.Default;
+            NotificationsEnabled = true;
+            AutoSaveEnabled = true;
+        }
+
+        /// <summary>
+        /// Get settings summary for debugging
         /// </summary>
         public string GetSettingsSummary()
         {
@@ -204,359 +195,294 @@ namespace UWP_Demo.Services
         }
 
         #endregion
+
+        #region Initialization
+
+        /// <summary>
+        /// Initialize settings service and apply saved theme
+        /// </summary>
+        public void Initialize()
+        {
+            try
+            {
+                // Apply saved theme on startup
+                ApplyTheme(CurrentTheme);
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Initialized with theme {CurrentTheme}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SettingsService: Initialization failed - {ex.Message}");
+            }
+        }
+
+        #endregion
     }
 
     /// <summary>
-    /// SUSPENSION & RESUME: Service for managing application suspension and resume state
-    /// Handles app lifecycle events, saves timestamps, and manages welcome back messages
-    /// Uses ApplicationDataContainer for persistent storage across app sessions
+    /// 6. Suspension & Resume Handling: Service for managing application suspension and resume state
+    /// Features: Timestamp tracking, session counting, welcome messages, test functionality
     /// </summary>
     public class SuspensionService
     {
         private static SuspensionService _instance;
-        
-        // SUSPENSION & RESUME: Reference to local settings storage for suspension state
         private readonly ApplicationDataContainer _localSettings;
-
-        // SUSPENSION & RESUME: Setting keys for suspension state storage
-        private const string LAST_SUSPENSION_TIME_KEY = "LastSuspensionTime";
-        private const string LAST_RESUME_TIME_KEY = "LastResumeTime";
-        private const string APP_LAUNCH_COUNT_KEY = "AppLaunchCount";
-        private const string CURRENT_PAGE_KEY = "CurrentPage";
-        private const string CUSTOMER_COUNT_KEY = "CustomerCountOnSuspension";
+        
+        private const string SUSPENSION_TIME_KEY = "SuspensionTime";
         private const string WAS_SUSPENDED_KEY = "WasSuspended";
+        private const string LAST_PAGE_KEY = "LastPage";
+        private const string SUSPENSION_COUNT_KEY = "SuspensionCount";
+        private const string RESUME_COUNT_KEY = "ResumeCount";
+        private const string SESSION_START_TIME_KEY = "SessionStartTime";
 
         public static SuspensionService Instance => _instance ?? (_instance = new SuspensionService());
 
         private SuspensionService()
         {
-            // SUSPENSION & RESUME: Get reference to local settings container for suspension state
             _localSettings = ApplicationData.Current.LocalSettings;
         }
 
-        #region Suspension State Properties
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets the timestamp when app was last suspended
-        /// </summary>
-        public DateTime? LastSuspensionTime
-        {
-            get
-            {
-                var value = _localSettings.Values[LAST_SUSPENSION_TIME_KEY];
-                if (value != null && DateTime.TryParse(value.ToString(), out DateTime time))
-                {
-                    return time;
-                }
-                return null;
-            }
-            private set
-            {
-                if (value.HasValue)
-                {
-                    _localSettings.Values[LAST_SUSPENSION_TIME_KEY] = value.Value.ToString("O"); // ISO 8601 format
-                }
-                else
-                {
-                    _localSettings.Values.Remove(LAST_SUSPENSION_TIME_KEY);
-                }
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets the timestamp when app was last resumed
-        /// </summary>
-        public DateTime? LastResumeTime
-        {
-            get
-            {
-                var value = _localSettings.Values[LAST_RESUME_TIME_KEY];
-                if (value != null && DateTime.TryParse(value.ToString(), out DateTime time))
-                {
-                    return time;
-                }
-                return null;
-            }
-            private set
-            {
-                if (value.HasValue)
-                {
-                    _localSettings.Values[LAST_RESUME_TIME_KEY] = value.Value.ToString("O");
-                }
-                else
-                {
-                    _localSettings.Values.Remove(LAST_RESUME_TIME_KEY);
-                }
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets the number of times the app has been launched
-        /// </summary>
-        public int AppLaunchCount
-        {
-            get
-            {
-                var value = _localSettings.Values[APP_LAUNCH_COUNT_KEY];
-                return value != null ? (int)value : 0;
-            }
-            private set
-            {
-                _localSettings.Values[APP_LAUNCH_COUNT_KEY] = value;
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets the current page name for state restoration
-        /// </summary>
-        public string CurrentPage
-        {
-            get
-            {
-                var value = _localSettings.Values[CURRENT_PAGE_KEY];
-                return value?.ToString() ?? "HomePage";
-            }
-            set
-            {
-                _localSettings.Values[CURRENT_PAGE_KEY] = value ?? "HomePage";
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets the customer count when app was suspended
-        /// </summary>
-        public int CustomerCountOnSuspension
-        {
-            get
-            {
-                var value = _localSettings.Values[CUSTOMER_COUNT_KEY];
-                return value != null ? (int)value : 0;
-            }
-            set
-            {
-                _localSettings.Values[CUSTOMER_COUNT_KEY] = value;
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Gets or sets whether the app was previously suspended
-        /// </summary>
         public bool WasSuspended
         {
             get
             {
                 var value = _localSettings.Values[WAS_SUSPENDED_KEY];
-                return value != null ? (bool)value : false;
+                return value != null && (bool)value;
             }
-            private set
-            {
-                _localSettings.Values[WAS_SUSPENDED_KEY] = value;
-            }
+            private set => _localSettings.Values[WAS_SUSPENDED_KEY] = value;
         }
 
-        #endregion
-
-        #region Suspension & Resume Operations
-
         /// <summary>
-        /// SUSPENSION & RESUME: Save app state when suspending
-        /// Records timestamp, current page, and app data for restoration
+        /// Gets the total number of times the app has been suspended in this session
         /// </summary>
-        public void SaveSuspensionState(string currentPage = null, int customerCount = 0)
+        public int SuspensionCount
         {
-            try
+            get
             {
-                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Saving suspension state...");
-
-                // SUSPENSION & RESUME: Record suspension timestamp
-                LastSuspensionTime = DateTime.Now;
-                WasSuspended = true;
-
-                // SUSPENSION & RESUME: Save current app state
-                if (!string.IsNullOrEmpty(currentPage))
-                {
-                    CurrentPage = currentPage;
-                }
-                CustomerCountOnSuspension = customerCount;
-
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: State saved - Page: {CurrentPage}, Customers: {customerCount}, Time: {LastSuspensionTime}");
+                var value = _localSettings.Values[SUSPENSION_COUNT_KEY];
+                return value != null ? (int)value : 0;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to save suspension state - {ex.Message}");
-            }
+            private set => _localSettings.Values[SUSPENSION_COUNT_KEY] = value;
         }
 
         /// <summary>
-        /// SUSPENSION & RESUME: Handle app resuming from suspension
-        /// Records resume timestamp and prepares welcome back message
+        /// Gets the total number of times the app has been resumed in this session
         /// </summary>
-        public void HandleResume()
+        public int ResumeCount
         {
-            try
+            get
             {
-                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Handling app resume...");
-
-                // SUSPENSION & RESUME: Record resume timestamp
-                LastResumeTime = DateTime.Now;
-
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: App resumed at {LastResumeTime}");
-
-                // SUSPENSION & RESUME: Calculate time away if we have suspension time
-                if (LastSuspensionTime.HasValue && LastResumeTime.HasValue)
-                {
-                    var timeAway = LastResumeTime.Value - LastSuspensionTime.Value;
-                    System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Time away: {timeAway}");
-                }
+                var value = _localSettings.Values[RESUME_COUNT_KEY];
+                return value != null ? (int)value : 0;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to handle resume - {ex.Message}");
-            }
+            private set => _localSettings.Values[RESUME_COUNT_KEY] = value;
         }
 
         /// <summary>
-        /// SUSPENSION & RESUME: Handle app launch (fresh start or resume)
-        /// Increments launch count and determines if this is a resume scenario
+        /// Gets the session start time
         /// </summary>
+        public DateTime SessionStartTime
+        {
+            get
+            {
+                var value = _localSettings.Values[SESSION_START_TIME_KEY];
+                if (value != null)
+                {
+                    return DateTime.FromBinary((long)value);
+                }
+                return DateTime.Now;
+            }
+            private set => _localSettings.Values[SESSION_START_TIME_KEY] = value.ToBinary();
+        }
+
         public void HandleLaunch()
         {
+            // Initialize session start time if not already set
+            if (_localSettings.Values[SESSION_START_TIME_KEY] == null)
+            {
+                SessionStartTime = DateTime.Now;
+                System.Diagnostics.Debug.WriteLine($"SuspensionService: New session started at {SessionStartTime:HH:mm:ss}");
+            }
+            
+            System.Diagnostics.Debug.WriteLine("SuspensionService: App launched");
+            System.Diagnostics.Debug.WriteLine($"SuspensionService: Session stats - Suspensions: {SuspensionCount}, Resumes: {ResumeCount}");
+        }
+
+        public void HandleResume()
+        {
+            // Increment resume counter
+            ResumeCount++;
+            
+            // Don't clear the WasSuspended flag immediately
+            // Let the UI handle clearing it when the user dismisses the welcome message
+            System.Diagnostics.Debug.WriteLine($"SuspensionService: App resumed (Resume #{ResumeCount}) - keeping suspension flag for welcome message");
+        }
+
+        public void SaveSuspensionState(string currentPage, int customerCount)
+        {
             try
             {
-                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Handling app launch...");
-
-                // SUSPENSION & RESUME: Increment launch counter
-                AppLaunchCount++;
-
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Launch #{AppLaunchCount}, Was previously suspended: {WasSuspended}");
+                // Increment suspension counter
+                SuspensionCount++;
+                
+                System.Diagnostics.Debug.WriteLine("=== ?? STARTING APP MINIMIZATION/SUSPENSION ===");
+                System.Diagnostics.Debug.WriteLine($"? Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                System.Diagnostics.Debug.WriteLine($"?? Suspension Count: #{SuspensionCount} (this session)");
+                System.Diagnostics.Debug.WriteLine($"?? Current Page: {currentPage}");
+                System.Diagnostics.Debug.WriteLine($"?? Session Duration: {DateTime.Now - SessionStartTime:hh\\:mm\\:ss}");
+                
+                _localSettings.Values[SUSPENSION_TIME_KEY] = DateTime.Now.ToBinary();
+                _localSettings.Values[LAST_PAGE_KEY] = currentPage;
+                WasSuspended = true;
+                
+                System.Diagnostics.Debug.WriteLine($"?? Suspension state saved successfully");
+                System.Diagnostics.Debug.WriteLine("=== ?? SUSPENSION PROCESS COMPLETED ===");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to handle launch - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"? SuspensionService: Failed to save suspension state - {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// SUSPENSION & RESUME: Get welcome back message based on suspension state
-        /// Enhanced with seconds-based counting for precise testing
-        /// </summary>
         public string GetWelcomeBackMessage()
         {
-            try
+            if (WasSuspended)
             {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Getting welcome message - WasSuspended: {WasSuspended}, LastSuspensionTime: {LastSuspensionTime}");
-
-                // SUSPENSION & RESUME: Always show welcome message on first launch
-                if (AppLaunchCount == 1)
+                try
                 {
-                    return $"?? Welcome to Customer Management! (First time launch)";
+                    var suspensionTimeValue = _localSettings.Values[SUSPENSION_TIME_KEY];
+                    if (suspensionTimeValue != null)
+                    {
+                        var suspensionTime = DateTime.FromBinary((long)suspensionTimeValue);
+                        var timeAway = DateTime.Now - suspensionTime;
+                        
+                        // Build time message
+                        string timeMessage = "";
+                        if (timeAway.TotalSeconds < 60)
+                        {
+                            int seconds = (int)timeAway.TotalSeconds;
+                            timeMessage = $"{seconds} second{(seconds != 1 ? "s" : "")}";
+                        }
+                        else if (timeAway.TotalMinutes < 60)
+                        {
+                            int minutes = (int)timeAway.TotalMinutes;
+                            int seconds = (int)(timeAway.TotalSeconds % 60);
+                            
+                            if (seconds > 0)
+                            {
+                                timeMessage = $"{minutes} minute{(minutes != 1 ? "s" : "")} and {seconds} second{(seconds != 1 ? "s" : "")}";
+                            }
+                            else
+                            {
+                                timeMessage = $"{minutes} minute{(minutes != 1 ? "s" : "")}";
+                            }
+                        }
+                        else if (timeAway.TotalHours < 24)
+                        {
+                            int hours = (int)timeAway.TotalHours;
+                            int minutes = (int)(timeAway.TotalMinutes % 60);
+                            
+                            if (minutes > 0)
+                            {
+                                timeMessage = $"{hours} hour{(hours != 1 ? "s" : "")} and {minutes} minute{(minutes != 1 ? "s" : "")}";
+                            }
+                            else
+                            {
+                                timeMessage = $"{hours} hour{(hours != 1 ? "s" : "")}";
+                            }
+                        }
+                        else
+                        {
+                            int days = (int)timeAway.TotalDays;
+                            int hours = (int)(timeAway.TotalHours % 24);
+                            
+                            if (hours > 0)
+                            {
+                                timeMessage = $"{days} day{(days != 1 ? "s" : "")} and {hours} hour{(hours != 1 ? "s" : "")}";
+                            }
+                            else
+                            {
+                                timeMessage = $"{days} day{(days != 1 ? "s" : "")}";
+                            }
+                        }
+                        
+                        // Include session statistics in the welcome message
+                        string sessionInfo = "";
+                        if (SuspensionCount > 1)
+                        {
+                            sessionInfo = $" (#{ResumeCount} return this session)";
+                        }
+                        
+                        return $"Welcome back! You were away for {timeMessage}.{sessionInfo}";
+                    }
                 }
-
-                // SUSPENSION & RESUME: Show launch count if no suspension data
-                if (!WasSuspended || !LastSuspensionTime.HasValue)
+                catch (Exception ex)
                 {
-                    return $"?? Welcome back to Customer Management! (Launch #{AppLaunchCount})";
+                    System.Diagnostics.Debug.WriteLine($"SuspensionService: Error calculating time away - {ex.Message}");
                 }
-
-                // SUSPENSION & RESUME: Calculate time away with precise seconds counting
-                var timeAway = DateTime.Now - LastSuspensionTime.Value;
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Time away calculated: {timeAway}");
-
-                // SUSPENSION & RESUME: Enhanced time formatting with seconds precision
-                if (timeAway.TotalSeconds < 10)
-                {
-                    return $"? Welcome back! You were away for {timeAway.Seconds} second(s). (Quick return!)";
-                }
-                else if (timeAway.TotalSeconds < 60)
-                {
-                    return $"?? Welcome back! You were away for {(int)timeAway.TotalSeconds} second(s).";
-                }
-                else if (timeAway.TotalMinutes < 1)
-                {
-                    return $"?? Welcome back! You were away for {timeAway.Seconds} second(s).";
-                }
-                else if (timeAway.TotalMinutes < 60)
-                {
-                    return $"? Welcome back! You were away for {(int)timeAway.TotalMinutes} minute(s) and {timeAway.Seconds} second(s).";
-                }
-                else if (timeAway.TotalHours < 24)
-                {
-                    return $"?? Welcome back! You were away for {(int)timeAway.TotalHours} hour(s), {timeAway.Minutes} minute(s), and {timeAway.Seconds} second(s).";
-                }
-                else
-                {
-                    return $"?? Welcome back! You were away for {timeAway.Days} day(s), {timeAway.Hours} hour(s), {timeAway.Minutes} minute(s), and {timeAway.Seconds} second(s).";
-                }
+                
+                return "Welcome back to Customer Management!";
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to get welcome message - {ex.Message}");
-                return "?? Welcome back to Customer Management!";
-            }
+            return ""; // Don't show welcome message on first launch
         }
 
-        /// <summary>
-        /// SUSPENSION & RESUME: Get suspension state summary for debugging with seconds precision
-        /// </summary>
-        public string GetSuspensionSummary()
-        {
-            try
-            {
-                var summary = $"Launches: {AppLaunchCount}, " +
-                       $"Last Suspended: {LastSuspensionTime?.ToString("MM/dd/yyyy HH:mm:ss") ?? "Never"}, " +
-                       $"Last Resumed: {LastResumeTime?.ToString("MM/dd/yyyy HH:mm:ss") ?? "Never"}, " +
-                       $"Was Suspended: {WasSuspended}, " +
-                       $"Page: {CurrentPage}, " +
-                       $"Customers: {CustomerCountOnSuspension}";
-
-                // SUSPENSION & RESUME: Add time away calculation if available
-                if (LastSuspensionTime.HasValue && LastResumeTime.HasValue)
-                {
-                    var timeAway = LastResumeTime.Value - LastSuspensionTime.Value;
-                    summary += $", Time Away: {timeAway.Days}d {timeAway.Hours}h {timeAway.Minutes}m {timeAway.Seconds}s";
-                }
-
-                return summary;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to get summary - {ex.Message}");
-                return "Suspension state unavailable";
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Clear suspension flag after successful resume
-        /// Modified to delay clearing for testing purposes
-        /// </summary>
         public void ClearSuspensionFlag()
         {
-            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Clearing suspension flag after welcome message shown");
             WasSuspended = false;
+            System.Diagnostics.Debug.WriteLine($"SuspensionService: Suspension flag cleared by user (Total resumes this session: {ResumeCount})");
+        }
+
+        public string GetSuspensionSummary()
+        {
+            var sessionDuration = DateTime.Now - SessionStartTime;
+            return $"Suspended: {WasSuspended}, Count: {SuspensionCount}, Resumes: {ResumeCount}, Session: {sessionDuration:hh\\:mm\\:ss}";
+        }
+
+        public void SetTestSuspensionState(int secondsAgo)
+        {
+            var testTime = DateTime.Now.AddSeconds(-secondsAgo);
+            _localSettings.Values[SUSPENSION_TIME_KEY] = testTime.ToBinary();
+            WasSuspended = true;
+            
+            // Don't increment the real counter for test scenarios
+            System.Diagnostics.Debug.WriteLine($"SuspensionService: Set TEST suspension state {secondsAgo} seconds ago (not counted in session stats)");
         }
 
         /// <summary>
-        /// SUSPENSION & RESUME: Force suspension state for testing purposes
-        /// Useful for debugging welcome message functionality
+        /// Reset session counters (useful for testing or new sessions)
         /// </summary>
-        public void SetTestSuspensionState(int secondsAgo = 30)
+        public void ResetSessionCounters()
         {
+            SuspensionCount = 0;
+            ResumeCount = 0;
+            SessionStartTime = DateTime.Now;
+            System.Diagnostics.Debug.WriteLine("SuspensionService: Session counters reset");
+        }
+
+        /// <summary>
+        /// Get detailed debugging information about suspension state
+        /// </summary>
+        public string GetDetailedDebugInfo()
+        {
+            var sessionDuration = DateTime.Now - SessionStartTime;
+            var lastSuspensionTime = "Never";
+            
             try
             {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Setting test suspension state ({secondsAgo} seconds ago)");
-
-                LastSuspensionTime = DateTime.Now.AddSeconds(-secondsAgo);
-                WasSuspended = true;
-                CurrentPage = "HomePage";
-                CustomerCountOnSuspension = 5;
-
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Test state set - suspended {secondsAgo} seconds ago");
+                var suspensionTimeValue = _localSettings.Values[SUSPENSION_TIME_KEY];
+                if (suspensionTimeValue != null)
+                {
+                    var suspensionTime = DateTime.FromBinary((long)suspensionTimeValue);
+                    lastSuspensionTime = suspensionTime.ToString("HH:mm:ss");
+                }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to set test state - {ex.Message}");
-            }
+            catch { }
+            
+            return $"Session Start: {SessionStartTime:HH:mm:ss}\n" +
+                   $"Session Duration: {sessionDuration:hh\\:mm\\:ss}\n" +
+                   $"Suspensions: {SuspensionCount}\n" +
+                   $"Resumes: {ResumeCount}\n" +
+                   $"Currently Suspended: {WasSuspended}\n" +
+                   $"Last Suspension: {lastSuspensionTime}";
         }
-        #endregion
     }
 }

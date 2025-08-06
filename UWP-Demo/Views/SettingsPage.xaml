@@ -91,7 +91,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- ?? SUSPENSION & RESUME SECTION: Native UWP card design -->
+            <!-- 6. Suspension & Resume Handling: SUSPENSION & RESUME SECTION -->
             <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
@@ -99,7 +99,7 @@
                     Padding="24">
                 
                 <StackPanel Spacing="20">
-                    <!-- ?? Section Header with Clock Icon -->
+                    <!-- Section Header with Clock Icon -->
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <FontIcon Glyph="&#xE823;" 
                                   FontSize="20" 
@@ -111,7 +111,7 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- ?? Info Display -->
+                    <!-- Info Display -->
                     <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                             BorderThickness="1"
@@ -137,7 +137,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- ?? Action Buttons -->
+                    <!-- Action Buttons -->
                     <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
                         <Button x:Name="RefreshSuspensionInfo"
                                 Click="RefreshSuspensionInfo_Click"
@@ -160,7 +160,7 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- ?? Instructions InfoBar -->
+                    <!-- Instructions InfoBar -->
                     <muxc:InfoBar Title="How to Test Suspension"
                                   Message="Minimize the app (Windows+D or minimize button) ? Wait a few seconds ? Restore the app (click on taskbar)"
                                   Severity="Informational"
@@ -260,6 +260,198 @@
                                   IsClosable="False">
                         <muxc:InfoBar.IconSource>
                             <muxc:FontIconSource Glyph="&#xE946;" />
+                        </muxc:InfoBar.IconSource>
+                    </muxc:InfoBar>
+                </StackPanel>
+            </Border>
+
+            <!-- 7. Error Simulation & Handling: ERROR SIMULATION SECTION -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24">
+                
+                <StackPanel Spacing="20">
+                    <!-- Section Header with Error Icon -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE7BA;" 
+                                  FontSize="20" 
+                                  Foreground="{ThemeResource SystemErrorTextColor}" />
+                        <TextBlock Text="Error Simulation &amp; Handling" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Error Log Display -->
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="16">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE946;" 
+                                          FontSize="16" 
+                                          Foreground="{ThemeResource SystemErrorTextColor}" />
+                                <TextBlock Text="Error Log &amp; Statistics" 
+                                           FontSize="14" 
+                                           FontWeight="SemiBold"
+                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                            
+                            <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                <TextBlock x:Name="ErrorLogDisplay"
+                                           Text="No errors logged yet. Click buttons below to simulate various error conditions."
+                                           FontSize="12"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="24,0,0,0" />
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Error Simulation Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- File Not Found Error -->
+                        <Button x:Name="SimulateFileNotFoundButton"
+                                Grid.Row="0" Grid.Column="0"
+                                Click="SimulateFileNotFound_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Margin="0,0,4,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8B7;" FontSize="16" />
+                                <TextBlock Text="File Not Found" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- JSON Parsing Error -->
+                        <Button x:Name="SimulateJsonErrorButton"
+                                Grid.Row="0" Grid.Column="1"
+                                Click="SimulateJsonError_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Margin="4,0,0,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8C8;" FontSize="16" />
+                                <TextBlock Text="JSON Parse Error" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Access Denied Error -->
+                        <Button x:Name="SimulateAccessDeniedButton"
+                                Grid.Row="1" Grid.Column="0"
+                                Click="SimulateAccessDenied_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Margin="0,4,4,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE72E;" FontSize="16" />
+                                <TextBlock Text="Access Denied" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Corrupted Data Error -->
+                        <Button x:Name="SimulateCorruptedDataButton"
+                                Grid.Row="1" Grid.Column="1"
+                                Click="SimulateCorruptedData_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Margin="4,4,0,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE7BA;" FontSize="16" />
+                                <TextBlock Text="Corrupted Data" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Network Error -->
+                        <Button x:Name="SimulateNetworkErrorButton"
+                                Grid.Row="2" Grid.Column="0"
+                                Click="SimulateNetworkError_Click"
+                                Style="{ThemeResource DefaultButtonStyle}"
+                                Margin="0,4,4,0"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE968;" FontSize="16" />
+                                <TextBlock Text="Network Error" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Clear Log -->
+                        <Button x:Name="ClearErrorLogButton"
+                                Grid.Row="2" Grid.Column="1"
+                                Click="ClearErrorLog_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Margin="4,4,0,0"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="16" />
+                                <TextBlock Text="Clear Log" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Simple File Access Examples -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="?? Simple File Access Examples" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="14"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="SimpleFileTestButton"
+                                    Click="SimpleFileTest_Click"
+                                    Style="{ThemeResource DefaultButtonStyle}"
+                                    HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8A5;" FontSize="14" />
+                                    <TextBlock Text="Try Open Missing File" FontSize="11" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="CreateDeleteTestButton"
+                                    Click="CreateDeleteTest_Click"
+                                    Style="{ThemeResource DefaultButtonStyle}"
+                                    HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="14" />
+                                    <TextBlock Text="Create &amp; Delete Test" FontSize="11" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="SafeAccessTestButton"
+                                    Click="SafeAccessTest_Click"
+                                    Style="{ThemeResource DefaultButtonStyle}"
+                                    HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8C7;" FontSize="14" />
+                                    <TextBlock Text="Safe Access Check" FontSize="11" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Error Simulation Instructions -->
+                    <muxc:InfoBar Title="Error Simulation Testing"
+                                  Message="Click buttons above to simulate different error conditions. Errors are logged to debug output (screen) and saved to 'error_log.txt' file."
+                                  Severity="Informational"
+                                  IsOpen="True"
+                                  IsClosable="False">
+                        <muxc:InfoBar.IconSource>
+                            <muxc:FontIconSource Glyph="&#xE7BA;" />
                         </muxc:InfoBar.IconSource>
                     </muxc:InfoBar>
                 </StackPanel>

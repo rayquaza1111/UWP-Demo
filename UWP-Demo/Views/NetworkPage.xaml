@@ -6,101 +6,78 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <!-- NETWORK API: Dedicated page for demonstrating HTTP/API functionality -->
+    <!-- NETWORK API: Dedicated page for demonstrating HTTP/API functionality - FUNCTIONALITY DISABLED -->
     <!-- Purpose: Show JSONPlaceholder API integration and internet capabilities -->
     <!-- Features: GET/POST requests, connectivity testing, data display -->
 
     <ScrollViewer>
         <StackPanel Margin="24" Spacing="24">
             
-            <!-- NETWORK API: Header section -->
+            <!-- NETWORK API DISABLED: Header section -->
             <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
                             CornerRadius="6"
                             Width="40"
                             Height="40">
                         <SymbolIcon Symbol="Globe" 
-                                    Foreground="White"
+                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center" />
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Network API Demo" 
+                        <TextBlock Text="Network API Demo (DISABLED)" 
                                    FontSize="28" 
                                    FontWeight="SemiBold"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" />
-                        <TextBlock Text="JSONPlaceholder API Integration Demo" 
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <TextBlock Text="HTTP API functionality has been commented out" 
                                    FontSize="14" 
                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
 
-            <!-- NETWORK API: Status and connectivity section -->
-            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
-                    BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}"
-                    BorderThickness="2"
-                    CornerRadius="8"
-                    Padding="24">
-                
-                <StackPanel Spacing="16">
-                    <!-- Connectivity Header -->
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon Glyph="&#xE968;" 
-                                  FontSize="20" 
-                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                        <TextBlock Text="API Connectivity" 
-                                   FontSize="20" 
-                                   FontWeight="SemiBold"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
+            <!-- NETWORK API DISABLED: Info message -->
+            <muxc:InfoBar Title="Network API Functionality Disabled"
+                          Message="The HTTP API demonstration features have been commented out in the code. All network-related classes and methods are disabled."
+                          Severity="Warning"
+                          IsOpen="True"
+                          IsClosable="False" />
 
-                    <!-- Connectivity Status -->
-                    <muxc:InfoBar x:Name="ConnectivityInfoBar"
-                                  Title="Internet Connection"
-                                  Message="Click 'Test Connection' to verify API connectivity"
-                                  Severity="Informational"
-                                  IsOpen="True"
-                                  IsClosable="False" />
-
-                    <!-- Test Connection Button -->
-                    <Button x:Name="TestConnectionButton"
-                            Click="TestConnectionButton_Click"
-                            Style="{ThemeResource AccentButtonStyle}"
-                            HorizontalAlignment="Center"
-                            Padding="20,10">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <SymbolIcon Symbol="Sync" />
-                            <TextBlock Text="Test Connection" FontWeight="SemiBold" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Border>
-
-            <!-- NETWORK API: API Operations section -->
+            <!-- NETWORK API DISABLED: Disabled features section -->
             <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
                     Padding="24">
                 
-                <StackPanel Spacing="20">
-                    <!-- Operations Header -->
+                <StackPanel Spacing="16">
+                    <!-- Disabled Header -->
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon Glyph="&#xE753;" 
+                        <FontIcon Glyph="&#xE894;" 
                                   FontSize="20" 
-                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                        <TextBlock Text="API Operations" 
+                                  Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <TextBlock Text="Disabled Features" 
                                    FontSize="20" 
                                    FontWeight="SemiBold"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                    VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Operation Buttons -->
-                    <Grid>
+                    <!-- Disabled Features List -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="The following features have been commented out:" FontWeight="SemiBold" />
+                        <TextBlock Text="• HttpApiService class" />
+                        <TextBlock Text="• HttpLoggingService class" />
+                        <TextBlock Text="• JSONPlaceholder API integration" />
+                        <TextBlock Text="• HTTP GET/POST request demonstrations" />
+                        <TextBlock Text="• Network connectivity testing" />
+                        <TextBlock Text="• External data import functionality" />
+                        <TextBlock Text="• Internet (Client) capability in manifest" />
+                    </StackPanel>
+
+                    <!-- Disabled Operation Buttons -->
+                    <Grid Margin="0,16,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
@@ -110,145 +87,66 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- GET Posts Button -->
+                        <!-- GET Posts Button - DISABLED -->
                         <Button x:Name="GetPostsButton"
                                 Grid.Row="0" Grid.Column="0"
-                                Click="GetPostsButton_Click"
+                                IsEnabled="False"
                                 Margin="4"
                                 HorizontalAlignment="Stretch"
                                 Padding="16,12">
                             <StackPanel Spacing="8">
                                 <SymbolIcon Symbol="Download" />
-                                <TextBlock Text="GET Posts" FontWeight="SemiBold" />
-                                <TextBlock Text="Fetch sample posts" FontSize="12" Opacity="0.8" />
+                                <TextBlock Text="GET Posts (Disabled)" FontWeight="SemiBold" />
+                                <TextBlock Text="Functionality commented out" FontSize="12" Opacity="0.8" />
                             </StackPanel>
                         </Button>
 
-                        <!-- GET Users Button -->
+                        <!-- GET Users Button - DISABLED -->
                         <Button x:Name="GetUsersButton"
                                 Grid.Row="0" Grid.Column="1"
-                                Click="GetUsersButton_Click"
+                                IsEnabled="False"
                                 Margin="4"
                                 HorizontalAlignment="Stretch"
                                 Padding="16,12">
                             <StackPanel Spacing="8">
                                 <SymbolIcon Symbol="People" />
-                                <TextBlock Text="GET Users" FontWeight="SemiBold" />
-                                <TextBlock Text="Fetch sample users" FontSize="12" Opacity="0.8" />
+                                <TextBlock Text="GET Users (Disabled)" FontWeight="SemiBold" />
+                                <TextBlock Text="Functionality commented out" FontSize="12" Opacity="0.8" />
                             </StackPanel>
                         </Button>
 
-                        <!-- POST Request Button -->
+                        <!-- POST Request Button - DISABLED -->
                         <Button x:Name="CreatePostButton"
                                 Grid.Row="1" Grid.Column="0"
-                                Click="CreatePostButton_Click"
+                                IsEnabled="False"
                                 Margin="4"
                                 HorizontalAlignment="Stretch"
-                                Padding="16,12"
-                                Style="{ThemeResource AccentButtonStyle}">
+                                Padding="16,12">
                             <StackPanel Spacing="8">
                                 <SymbolIcon Symbol="Upload" />
-                                <TextBlock Text="POST Data" FontWeight="SemiBold" />
-                                <TextBlock Text="Create new post" FontSize="12" Opacity="0.9" />
+                                <TextBlock Text="POST Data (Disabled)" FontWeight="SemiBold" />
+                                <TextBlock Text="Functionality commented out" FontSize="12" Opacity="0.8" />
                             </StackPanel>
                         </Button>
 
-                        <!-- Import to Customers Button -->
+                        <!-- Import to Customers Button - DISABLED -->
                         <Button x:Name="ImportUsersButton"
                                 Grid.Row="1" Grid.Column="1"
-                                Click="ImportUsersButton_Click"
+                                IsEnabled="False"
                                 Margin="4"
                                 HorizontalAlignment="Stretch"
                                 Padding="16,12">
                             <StackPanel Spacing="8">
                                 <SymbolIcon Symbol="ContactInfo" />
-                                <TextBlock Text="Import Users" FontWeight="SemiBold" />
-                                <TextBlock Text="Add to customers" FontSize="12" Opacity="0.8" />
+                                <TextBlock Text="Import Users (Disabled)" FontWeight="SemiBold" />
+                                <TextBlock Text="Functionality commented out" FontSize="12" Opacity="0.8" />
                             </StackPanel>
                         </Button>
                     </Grid>
                 </StackPanel>
             </Border>
 
-            <!-- NETWORK API: Results display section -->
-            <Border Background="{ThemeResource SystemControlBackgroundListMediumBrush}"
-                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="24">
-                
-                <StackPanel Spacing="16">
-                    <!-- Results Header -->
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon Glyph="&#xE8F3;" 
-                                  FontSize="20" 
-                                  Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                        <TextBlock Text="API Results" 
-                                   FontSize="20" 
-                                   FontWeight="SemiBold"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- Results Display -->
-                    <ScrollViewer Height="300" VerticalScrollBarVisibility="Auto">
-                        <Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
-                                CornerRadius="4"
-                                Padding="12">
-                            <TextBlock x:Name="ResultsTextBlock"
-                                       Text="No API calls made yet. Click a button above to test the network functionality."
-                                       FontFamily="Consolas"
-                                       FontSize="12"
-                                       TextWrapping="Wrap"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                        </Border>
-                    </ScrollViewer>
-
-                    <!-- Clear Results Button -->
-                    <Button x:Name="ClearResultsButton"
-                            Click="ClearResultsButton_Click"
-                            HorizontalAlignment="Center"
-                            Padding="16,8">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <SymbolIcon Symbol="Clear" />
-                            <TextBlock Text="Clear Results" />
-                        </StackPanel>
-                    </Button>
-
-                    <!-- NETWORK API PROOF: Log viewing buttons for mentor verification -->
-                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Margin="0,12,0,0">
-                        <Button x:Name="ViewHttpLogsButton"
-                                Click="ViewHttpLogsButton_Click"
-                                Style="{ThemeResource AccentButtonStyle}"
-                                Padding="16,8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8C8;" />
-                                <TextBlock Text="View HTTP Logs" FontWeight="SemiBold" />
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button x:Name="ShowLogPathButton"
-                                Click="ShowLogPathButton_Click"
-                                Padding="16,8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8DA;" />
-                                <TextBlock Text="Show Log File Path" />
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button x:Name="ClearLogsButton"
-                                Click="ClearLogsButton_Click"
-                                Padding="16,8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74D;" />
-                                <TextBlock Text="Clear Logs" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- NETWORK API: Information section -->
+            <!-- NETWORK API DISABLED: Information section -->
             <Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="1"
@@ -261,7 +159,7 @@
                         <FontIcon Glyph="&#xE946;" 
                                   FontSize="20" 
                                   Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                        <TextBlock Text="Mentor Verification Guide" 
+                        <TextBlock Text="Code Comment Information" 
                                    FontSize="20" 
                                    FontWeight="SemiBold"
                                    Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
@@ -270,49 +168,46 @@
 
                     <!-- Info Content -->
                     <StackPanel Spacing="12">
-                        <TextBlock Text="?? PROOF FOR MENTOR - Multiple Verification Methods:" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock Text="?? Commented Code Locations:" FontWeight="SemiBold" FontSize="16" />
                         
                         <TextBlock TextWrapping="Wrap" FontSize="14">
-                            <Run Text="1. Visual Studio Debug Output:" FontWeight="SemiBold" />
+                            <Run Text="1. Services\BasicServices.cs:" FontWeight="SemiBold" />
                             <LineBreak />
-                            <Run Text="   • Open Visual Studio Output Window ? Show output from: Debug" />
+                            <Run Text="   • HttpApiService class (lines wrapped in /* ... */)" />
                             <LineBreak />
-                            <Run Text="   • Look for 'NETWORK API PROOF:' entries with detailed HTTP info" />
+                            <Run Text="   • HttpLoggingService class (lines wrapped in /* ... */)" />
                         </TextBlock>
                         
                         <TextBlock TextWrapping="Wrap" FontSize="14">
-                            <Run Text="2. HTTP Log File:" FontWeight="SemiBold" />
+                            <Run Text="2. Views\NetworkPage.xaml.cs:" FontWeight="SemiBold" />
                             <LineBreak />
-                            <Run Text="   • Click 'Show Log File Path' to get exact file location" />
+                            <Run Text="   • All event handlers and HTTP logic commented out" />
                             <LineBreak />
-                            <Run Text="   • Contains complete request/response data with timestamps" />
+                            <Run Text="   • Only stub class remains for compilation" />
                         </TextBlock>
                         
                         <TextBlock TextWrapping="Wrap" FontSize="14">
-                            <Run Text="3. Independent API Verification:" FontWeight="SemiBold" />
+                            <Run Text="3. MainPage.xaml:" FontWeight="SemiBold" />
                             <LineBreak />
-                            <Run Text="   • Open browser: https://jsonplaceholder.typicode.com/posts" />
+                            <Run Text="   • NetworkNavItem navigation removed from menu" />
                             <LineBreak />
-                            <Run Text="   • Use Postman/curl to test endpoints directly" />
+                            <Run Text="   • Navigation mappings commented out" />
                         </TextBlock>
                         
                         <TextBlock TextWrapping="Wrap" FontSize="14">
-                            <Run Text="4. Network Traffic:" FontWeight="SemiBold" />
+                            <Run Text="4. Package.appxmanifest:" FontWeight="SemiBold" />
                             <LineBreak />
-                            <Run Text="   • Use Fiddler/Wireshark to capture HTTP traffic" />
-                            <LineBreak />
-                            <Run Text="   • Monitor actual network packets during API calls" />
+                            <Run Text="   • internetClient capability commented out" />
                         </TextBlock>
 
-                        <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" 
+                        <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" 
                                 CornerRadius="4" 
                                 Padding="12"
                                 Margin="0,8,0,0">
                             <TextBlock TextWrapping="Wrap" 
-                                       Foreground="White" 
                                        FontSize="12">
-                                <Run Text="?? Mentor Tip: " FontWeight="SemiBold" />
-                                <Run Text="Check Package.appxmanifest for 'internetClient' capability and review the HttpApiService class code for proper HttpClient usage with async/await patterns." />
+                                <Run Text="?? Note: " FontWeight="SemiBold" />
+                                <Run Text="To re-enable network functionality, uncomment the marked sections in the files listed above and restore the internetClient capability in the manifest." />
                             </TextBlock>
                         </Border>
                     </StackPanel>

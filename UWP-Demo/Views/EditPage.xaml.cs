@@ -12,40 +12,34 @@ using System.Collections.ObjectModel;
 namespace UWP_Demo.Views
 {
     /// <summary>
-    /// ?? CUSTOMER SELECTION & STATE MANAGEMENT: EditPage with comprehensive functionality
-    /// ?? Features: Auto-save form data, restore customer state, navigation tracking, customer dropdown
-    /// ?? Purpose: Demonstrate state management and customer selection across navigation and app sessions
+    /// EditPage with customer selection and state management functionality
     /// </summary>
     public sealed partial class EditPage : Page
     {
-        // ?? CUSTOMER SELECTION & STATE MANAGEMENT: Services and state
         private NavigationStateService _stateService;
         private CustomerService _customerService;
         private DialogService _dialogService;
 
-        // ?? CUSTOMER SELECTION: Customer list and selection management
         private ObservableCollection<Customer> _allCustomers;
         private Customer _originalCustomer;
         private bool _isFormDirty = false;
         private bool _isLoadingState = false;
+        private bool _isEditMode => _originalCustomer != null;
 
         public EditPage()
         {
             this.InitializeComponent();
             
-            // ?? CUSTOMER SELECTION: Initialize services and collections
             _stateService = NavigationStateService.Instance;
             _customerService = new CustomerService();
             _dialogService = new DialogService();
             _allCustomers = new ObservableCollection<Customer>();
 
-            System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: EditPage initialized with dropdown support");
+            System.Diagnostics.Debug.WriteLine("EditPage initialized with dropdown support");
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Handle page navigation and setup customer dropdown
-        /// ?? Features: Load customer list, auto-select first customer, restore state
-        /// Navigation System: Called: When navigating to this page with or without parameters
+        /// Handle page navigation and setup customer dropdown
         /// </summary>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -53,64 +47,60 @@ namespace UWP_Demo.Views
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: EditPage navigated to, starting setup");
+                System.Diagnostics.Debug.WriteLine("EditPage navigated to, starting setup");
                 
-                // ?? CUSTOMER SELECTION: Load all customers first
+                // Load all customers first
                 await LoadCustomersAsync();
                 
-                // Navigation System: Add navigation entry
+                // Add navigation entry
                 _stateService.AddNavigationEntry("EditPage", "Edit Customer", e.Parameter?.ToString() ?? "");
                 
-                // ?? CUSTOMER SELECTION: Check for passed customer parameter
+                // Check for passed customer parameter
                 Customer customerFromParameter = null;
                 if (e.Parameter is Customer customer)
                 {
                     customerFromParameter = customer;
-                    System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Received customer parameter: {customer.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"Received customer parameter: {customer.FullName}");
                 }
 
-                // ?? CUSTOMER SELECTION: Setup customer selection and restore state
+                // Setup customer selection and restore state
                 await SetupCustomerSelectionAsync(customerFromParameter);
                 
-                // ?? STATE MANAGEMENT: Update state info display
+                // Update state info display
                 UpdateStateInfoDisplay();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed during OnNavigatedTo - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed during OnNavigatedTo - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Handle page navigation away (save state)
-        /// Navigation System: Saves: Current form data if user has made changes
-        /// Navigation System: Called: When navigating away from this page
+        /// Handle page navigation away (save state)
         /// </summary>
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("Navigation System: EditPage navigating away, saving state");
+                System.Diagnostics.Debug.WriteLine("EditPage navigating away, saving state");
                 
-                // ?? STATE MANAGEMENT: Save current form state if dirty
+                // Save current form state if dirty
                 if (_isFormDirty && !_isLoadingState)
                 {
                     SaveCurrentFormState();
-                    System.Diagnostics.Debug.WriteLine("Navigation System: Form state saved due to navigation away");
+                    System.Diagnostics.Debug.WriteLine("Form state saved due to navigation away");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed during OnNavigatingFrom - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed during OnNavigatingFrom - {ex.Message}");
             }
 
             base.OnNavigatingFrom(e);
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Restore page state from stored data
-        /// ?? Enhanced: Works with customer selection and auto-binding
-        /// ?? Priority: Stored form data > Customer data > Clean form
+        /// Restore page state from stored data
         /// </summary>
         private async Task RestorePageStateAsync(Customer customerToEdit, bool stateRestored, bool autoSelected)
         {
@@ -122,26 +112,26 @@ namespace UWP_Demo.Views
 
                 if (hasStoredFormData && hasUnsavedChanges)
                 {
-                    // ?? STATE MANAGEMENT: Restore form data from previous session
+                    // Restore form data from previous session
                     PopulateFormFromData(formData);
                     stateRestored = true;
                     UnsavedChangesInfoBar.IsOpen = true;
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Restored unsaved form data");
+                    System.Diagnostics.Debug.WriteLine("Restored unsaved form data");
                 }
                 else if (customerToEdit != null)
                 {
-                    // ?? CUSTOMER SELECTION: Populate form with customer data
+                    // Populate form with customer data
                     PopulateFormFromCustomer(customerToEdit);
-                    System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Populated form with customer data");
+                    System.Diagnostics.Debug.WriteLine("Populated form with customer data");
                 }
 
-                // ?? STATE MANAGEMENT: Update UI based on restoration type
+                // Update UI based on restoration type
                 if (stateRestored && !autoSelected)
                 {
                     StateInfoBar.IsOpen = true;
                 }
 
-                // ?? CUSTOMER SELECTION: Update page title based on mode
+                // Update page title based on mode
                 if (customerToEdit != null)
                 {
                     PageTitle.Text = $"Edit {customerToEdit.FullName}";
@@ -157,13 +147,12 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to restore page state - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to restore page state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Populate form from customer object
-        /// ?? Sets: All form fields from customer data
+        /// Populate form from customer object
         /// </summary>
         private void PopulateFormFromCustomer(Customer customer)
         {
@@ -179,8 +168,7 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Populate form from stored form data
-        /// ?? Sets: All form fields from saved form state
+        /// Populate form from stored form data
         /// </summary>
         private void PopulateFormFromData(NavigationStateService.FormData formData)
         {
@@ -196,8 +184,7 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Save current form state
-        /// ?? Saves: All form field values to state service
+        /// Save current form state
         /// </summary>
         private void SaveCurrentFormState()
         {
@@ -216,52 +203,49 @@ namespace UWP_Demo.Views
                     customerId
                 );
 
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Current form state saved");
+                System.Diagnostics.Debug.WriteLine("Current form state saved");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to save form state - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to save form state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Handle form field changes
-        /// ?? Tracks: When user modifies form data
+        /// Handle form field changes
         /// </summary>
         private void OnFormFieldChanged(object sender, TextChangedEventArgs e)
         {
             if (!_isLoadingState)
             {
                 _isFormDirty = true;
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Form marked as dirty due to user input");
+                System.Diagnostics.Debug.WriteLine("Form marked as dirty due to user input");
                 
-                // ?? STATE MANAGEMENT: Auto-save form state periodically
+                // Auto-save form state periodically
                 SaveCurrentFormState();
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Handle save button click
-        /// ?? Saves: Customer data and clears state
+        /// Handle save button click
         /// </summary>
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Save button clicked");
+                System.Diagnostics.Debug.WriteLine("Save button clicked");
 
-                // Validate form
                 if (!ValidateForm())
                 {
+                    ValidationMessage.Text = "Please fill in all required fields with valid data.";
+                    ValidationMessage.Visibility = Visibility.Visible;
                     return;
                 }
 
-                // Create or update customer
                 var customer = CreateCustomerFromForm();
-                
-                if (_originalCustomer != null)
+
+                if (_isEditMode && _originalCustomer != null)
                 {
-                    // Update existing customer
                     customer.Id = _originalCustomer.Id;
                     customer.DateCreated = _originalCustomer.DateCreated;
                     // Note: LastModified is automatically updated in the Customer model
@@ -276,7 +260,7 @@ namespace UWP_Demo.Views
                     await _dialogService.ShowMessageAsync("Success", $"Customer {customer.FullName} added successfully!");
                 }
 
-                // ?? STATE MANAGEMENT: Clear state after successful save
+                // Clear state after successful save
                 _stateService.MarkFormClean();
                 _stateService.ClearAllState();
                 _isFormDirty = false;
@@ -286,24 +270,23 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to save customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to save customer - {ex.Message}");
                 await _dialogService.ShowMessageAsync("Error", $"Failed to save customer: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Handle cancel button click
-        /// ?? Shows: Unsaved changes warning if needed
+        /// Handle cancel button click with unsaved changes warning
         /// </summary>
         private async void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Cancel button clicked");
+                System.Diagnostics.Debug.WriteLine("Cancel button clicked");
 
                 bool shouldNavigateBack = true;
 
-                // ?? STATE MANAGEMENT: Warn about unsaved changes
+                // Warn about unsaved changes
                 if (_isFormDirty)
                 {
                     var result = await _dialogService.ShowConfirmationAsync(
@@ -318,7 +301,7 @@ namespace UWP_Demo.Views
 
                 if (shouldNavigateBack)
                 {
-                    // ?? STATE MANAGEMENT: Save state if dirty, but don't clear it (user might return)
+                    // Save state if dirty, but don't clear it (user might return)
                     if (_isFormDirty)
                     {
                         SaveCurrentFormState();
@@ -329,19 +312,18 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed during cancel - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed during cancel - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Handle reset button click
-        /// ?? Restores: Original customer data
+        /// Handle reset button click - restores original customer data
         /// </summary>
         private async void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Reset button clicked");
+                System.Diagnostics.Debug.WriteLine("Reset button clicked");
 
                 var result = await _dialogService.ShowConfirmationAsync(
                     "Reset Form",
@@ -352,7 +334,7 @@ namespace UWP_Demo.Views
 
                 if (result == Windows.UI.Xaml.Controls.ContentDialogResult.Primary)
                 {
-                    // ?? STATE MANAGEMENT: Reset to original customer data
+                    // Reset to original customer data
                     if (_originalCustomer != null)
                     {
                         PopulateFormFromCustomer(_originalCustomer);
@@ -370,18 +352,20 @@ namespace UWP_Demo.Views
                     _isFormDirty = false;
                     ValidationMessage.Visibility = Visibility.Collapsed;
                     
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Form reset to original values");
+                    // Clear saved state
+                    _stateService.ClearAllState();
+
+                    System.Diagnostics.Debug.WriteLine("Form reset completed");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed during reset - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed during reset - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Refresh state info display
-        /// ?? Updates: State information panel
+        /// Refresh state info display
         /// </summary>
         private void RefreshStateButton_Click(object sender, RoutedEventArgs e)
         {
@@ -389,8 +373,7 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Clear all state
-        /// ?? Clears: All stored state and resets form
+        /// Clear all state
         /// </summary>
         private async void ClearStateButton_Click(object sender, RoutedEventArgs e)
         {
@@ -417,18 +400,17 @@ namespace UWP_Demo.Views
                     
                     UpdateStateInfoDisplay();
                     
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: All state cleared");
+                    System.Diagnostics.Debug.WriteLine("All state cleared");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to clear state - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to clear state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Update state information display
-        /// ?? Shows: Current state details for debugging
+        /// Update state information display
         /// </summary>
         private void UpdateStateInfoDisplay()
         {
@@ -459,12 +441,12 @@ namespace UWP_Demo.Views
                 
                 StateInfoDisplay.Text = detailedInfo;
                 
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: State info display updated");
+                System.Diagnostics.Debug.WriteLine("State info display updated");
             }
             catch (Exception ex)
             {
                 StateInfoDisplay.Text = $"Error loading state info: {ex.Message}";
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to update state display - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to update state display - {ex.Message}");
             }
         }
 
@@ -510,28 +492,27 @@ namespace UWP_Demo.Views
             {
                 if (Frame.CanGoBack)
                 {
-                    Frame.GoBack(); // Navigation System: Use frame's back navigation
+                    Frame.GoBack();
                 }
                 else
                 {
-                    Frame.Navigate(typeof(HomePage)); // Navigation System: Fallback to HomePage
+                    Frame.Navigate(typeof(HomePage));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate back - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to navigate back - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Load all customers and populate dropdown
-        /// ?? Loads: Customer list from service and populates ComboBox
+        /// Load all customers and populate dropdown
         /// </summary>
         private async Task LoadCustomersAsync()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Loading customers for dropdown");
+                System.Diagnostics.Debug.WriteLine("Loading customers for dropdown");
                 
                 // Load customers from service
                 var customers = await _customerService.GetCustomersAsync();
@@ -546,7 +527,7 @@ namespace UWP_Demo.Views
                 // Bind to ComboBox
                 CustomerSelectionComboBox.ItemsSource = _allCustomers;
                 
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Loaded {_allCustomers.Count} customers");
+                System.Diagnostics.Debug.WriteLine($"Loaded {_allCustomers.Count} customers");
                 
                 // Update info bar
                 if (_allCustomers.Count == 0)
@@ -566,7 +547,7 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to load customers - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load customers - {ex.Message}");
                 CustomerCountInfoBar.Title = "Error Loading Customers";
                 CustomerCountInfoBar.Message = $"Failed to load customer list: {ex.Message}";
                 CustomerCountInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
@@ -575,8 +556,8 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Setup customer selection with auto-binding
-        /// ?? Priority: Parameter customer > Stored customer > First customer > New customer
+        /// Setup customer selection with auto-binding
+        /// Priority: Parameter customer > Stored customer > First customer > New customer
         /// </summary>
         private async Task SetupCustomerSelectionAsync(Customer parameterCustomer = null)
         {
@@ -588,37 +569,37 @@ namespace UWP_Demo.Views
                 bool stateRestored = false;
                 bool autoSelected = false;
 
-                // ?? CUSTOMER SELECTION: Priority 1 - Use parameter customer if provided
+                // Priority 1 - Use parameter customer if provided
                 if (parameterCustomer != null)
                 {
                     customerToEdit = parameterCustomer;
                     _stateService.SetSelectedCustomerForEdit(customerToEdit);
-                    System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Using customer from navigation parameter");
+                    System.Diagnostics.Debug.WriteLine("Using customer from navigation parameter");
                 }
-                // ?? STATE MANAGEMENT: Priority 2 - Use stored selected customer
+                // Priority 2 - Use stored selected customer
                 else if (_stateService.SelectedCustomer != null)
                 {
                     customerToEdit = _stateService.SelectedCustomer;
                     stateRestored = true;
-                    System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Restored customer from stored state");
+                    System.Diagnostics.Debug.WriteLine("Restored customer from stored state");
                 }
-                // ?? CUSTOMER SELECTION: Priority 3 - Auto-select first customer
+                // Priority 3 - Auto-select first customer
                 else if (_allCustomers.Count > 0)
                 {
                     customerToEdit = _allCustomers.First();
                     autoSelected = true;
                     _stateService.SetSelectedCustomerForEdit(customerToEdit);
-                    System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Auto-selected first customer: {customerToEdit.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"Auto-selected first customer: {customerToEdit.FullName}");
                     
                     CustomerCountInfoBar.Title = "Auto-Selected Customer";
                     CustomerCountInfoBar.Message = $"Automatically selected '{customerToEdit.FullName}' for editing. Use dropdown to switch.";
                     CustomerCountInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
                     CustomerCountInfoBar.IsOpen = true;
                 }
-                // ?? CUSTOMER SELECTION: Priority 4 - No customers found, offer to load sample data
+                // Priority 4 - No customers found, offer to load sample data
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: No customers found, switching to new customer mode");
+                    System.Diagnostics.Debug.WriteLine("No customers found, switching to new customer mode");
                     
                     CustomerCountInfoBar.Title = "No Customers Found";
                     CustomerCountInfoBar.Message = "No customers in database. Click 'Load Sample Data' or create a new customer.";
@@ -638,7 +619,7 @@ namespace UWP_Demo.Views
                 // Store original customer for reset functionality
                 _originalCustomer = customerToEdit;
 
-                // ?? STATE MANAGEMENT: Check for stored form data and populate form
+                // Check for stored form data and populate form
                 await RestorePageStateAsync(customerToEdit, stateRestored, autoSelected);
 
                 _isLoadingState = false;
@@ -646,13 +627,12 @@ namespace UWP_Demo.Views
             catch (Exception ex)
             {
                 _isLoadingState = false;
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to setup customer selection - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to setup customer selection - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Handle customer selection change from dropdown
-        /// ?? Updates: Form with selected customer data
+        /// Handle customer selection change from dropdown
         /// </summary>
         private void CustomerSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -663,7 +643,7 @@ namespace UWP_Demo.Views
                 var selectedCustomer = CustomerSelectionComboBox.SelectedItem as Customer;
                 if (selectedCustomer != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: User selected customer: {selectedCustomer.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"User selected customer: {selectedCustomer.FullName}");
                     
                     // Check for unsaved changes
                     if (_isFormDirty)
@@ -678,12 +658,12 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to handle selection change - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to handle selection change - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Load selected customer into form
+        /// Load selected customer into form
         /// </summary>
         private void LoadSelectedCustomer(Customer customer)
         {
@@ -702,16 +682,16 @@ namespace UWP_Demo.Views
                 // Clear any unsaved changes flag
                 _isFormDirty = false;
                 
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Loaded customer {customer.FullName} into form");
+                System.Diagnostics.Debug.WriteLine($"Loaded customer {customer.FullName} into form");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to load selected customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load selected customer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Show warning about unsaved changes when switching customers
+        /// Show warning about unsaved changes when switching customers
         /// </summary>
         private async void ShowUnsavedChangesWarning(Customer newCustomer)
         {
@@ -735,12 +715,12 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to handle unsaved changes warning - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to handle unsaved changes warning - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Save current customer changes
+        /// Save current customer changes
         /// </summary>
         private async Task SaveCurrentCustomer()
         {
@@ -762,18 +742,18 @@ namespace UWP_Demo.Views
                     }
                     
                     _isFormDirty = false;
-                    System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Saved changes for {customer.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"Saved changes for {customer.FullName}");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to save current customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to save current customer - {ex.Message}");
                 throw; // Re-throw to handle in calling method
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Handle refresh customers button
+        /// Handle refresh customers button
         /// </summary>
         private async void RefreshCustomersButton_Click(object sender, RoutedEventArgs e)
         {
@@ -801,16 +781,16 @@ namespace UWP_Demo.Views
                     }
                 }
                 
-                System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Customer list refreshed");
+                System.Diagnostics.Debug.WriteLine("Customer list refreshed");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to refresh customers - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to refresh customers - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Handle add new customer button
+        /// Handle add new customer button
         /// </summary>
         private void AddNewCustomerButton_Click(object sender, RoutedEventArgs e)
         {
@@ -833,16 +813,16 @@ namespace UWP_Demo.Views
                 
                 _isFormDirty = false;
                 
-                System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Switched to new customer mode");
+                System.Diagnostics.Debug.WriteLine("Switched to new customer mode");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to switch to new customer mode - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to switch to new customer mode - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Offer to load sample data when no customers exist
+        /// Offer to load sample data when no customers exist
         /// </summary>
         private async Task ShowSampleDataOfferAsync()
         {
@@ -884,18 +864,18 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to show sample data offer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to show sample data offer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? CUSTOMER SELECTION: Load sample customer data
+        /// Load sample customer data
         /// </summary>
         private async Task LoadSampleDataAsync()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? CUSTOMER SELECTION: Loading sample customer data");
+                System.Diagnostics.Debug.WriteLine("Loading sample customer data");
                 
                 // Create sample customer data
                 var sampleCustomers = new[]
@@ -909,14 +889,14 @@ namespace UWP_Demo.Views
                 foreach (var customer in sampleCustomers)
                 {
                     await _customerService.AddCustomerAsync(customer);
-                    System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Added sample customer {customer.FullName}");
+                    System.Diagnostics.Debug.WriteLine($"Added sample customer {customer.FullName}");
                 }
                 
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION: Successfully loaded {sampleCustomers.Length} sample customers");
+                System.Diagnostics.Debug.WriteLine($"Successfully loaded {sampleCustomers.Length} sample customers");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? CUSTOMER SELECTION ERROR: Failed to load sample data - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load sample data - {ex.Message}");
                 throw;
             }
         }

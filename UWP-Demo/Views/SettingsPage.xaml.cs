@@ -1,6 +1,8 @@
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace UWP_Demo.Views
 {
@@ -165,32 +167,37 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? SUSPENSION & RESUME: Handle refresh suspension info button click
-        /// ?? Displays current suspension state information for testing
-        /// ?? Shows: Launch count, suspension times, welcome messages, app state
-        /// ? Provides real-time debugging information for developers
+        /// 6. Suspension & Resume Handling: Handle refresh suspension info button click
+        /// Displays current suspension state information for testing
+        /// Shows: Launch count, suspension times, welcome messages, app state
+        /// Provides real-time debugging information for developers
         /// </summary>
         private void RefreshSuspensionInfo_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Refreshing suspension info for display");
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Refreshing suspension info for display");
                 
-                // ?? SUSPENSION & RESUME: Get current suspension state information
                 if (SuspensionStatus != null)
                 {
                     var suspensionService = UWP_Demo.Services.SuspensionService.Instance;
-                    var suspensionSummary = suspensionService.GetSuspensionSummary();
+                    var detailedInfo = suspensionService.GetDetailedDebugInfo();
                     var welcomeMessage = suspensionService.GetWelcomeBackMessage();
                     
-                    SuspensionStatus.Text = $"Suspension Summary:\n{suspensionSummary}\n\nWelcome Message:\n{welcomeMessage}";
+                    var fullInfo = $"=== SUSPENSION DEBUG INFO ===\n\n" +
+                                  $"{detailedInfo}\n\n" +
+                                  $"Welcome Message:\n" +
+                                  $"{(string.IsNullOrEmpty(welcomeMessage) ? "(No message - not suspended)" : welcomeMessage)}\n\n" +
+                                  $"Last Updated: {DateTime.Now:HH:mm:ss}";
                     
-                    System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME: Updated UI with suspension info");
+                    SuspensionStatus.Text = fullInfo;
+                    
+                    System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Updated UI with detailed suspension info");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME ERROR: Failed to refresh suspension info - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to refresh suspension info - {ex.Message}");
                 if (SuspensionStatus != null)
                 {
                     SuspensionStatus.Text = $"Error loading suspension info: {ex.Message}";
@@ -199,56 +206,52 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? SUSPENSION & RESUME: Test suspension message functionality
-        /// ?? Simulates app being suspended 30 seconds ago for testing welcome message
-        /// ? Features: Auto-navigation to HomePage, immediate feedback, test state simulation
-        /// ?? Purpose: Allows easy testing without actual app suspension
+        /// 6. Suspension & Resume Handling: Test suspension message functionality
+        /// Simulates app being suspended 15 seconds ago for testing welcome message
+        /// Features: Auto-navigation to HomePage, immediate feedback, test state simulation
+        /// Purpose: Allows easy testing without actual app suspension
         /// </summary>
         private void TestSuspensionMessage_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Testing suspension message functionality");
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Testing suspension message functionality");
                 
-                // ?? SUSPENSION & RESUME: Set test suspension state (30 seconds ago)
                 var suspensionService = UWP_Demo.Services.SuspensionService.Instance;
-                suspensionService.SetTestSuspensionState(30); // 30 seconds ago
+                suspensionService.SetTestSuspensionState(15); // 15 seconds ago
                 
-                // ?? SUSPENSION & RESUME: Update display with test state
                 RefreshSuspensionInfo_Click(sender, e);
                 
-                // ? SUSPENSION & RESUME: Show confirmation and auto-navigate to see result
                 if (StatusDisplay != null)
                 {
                     StatusDisplay.Text = "Test suspension set! Navigating to Home page...";
                 }
                 
-                // ?? SUSPENSION & RESUME: Auto-navigate to HomePage to show welcome message
                 try
                 {
                     if (Frame != null)
                     {
                         Frame.Navigate(typeof(HomePage));
-                        System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Auto-navigated to HomePage to show welcome message");
+                        System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Auto-navigated to HomePage to show welcome message");
                     }
                 }
                 catch (Exception navEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME: Auto-navigation failed - {navEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Auto-navigation failed - {navEx.Message}");
                 }
                 
-                System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Test suspension state set - welcome message should be visible on HomePage");
+                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Test suspension state set - welcome message should be visible on HomePage");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME ERROR: Failed to set test suspension - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to set test suspension - {ex.Message}");
                 if (StatusDisplay != null)
                 {
                     StatusDisplay.Text = $"Error setting test suspension: {ex.Message}";
                 }
             }
         }
-
+        
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -281,12 +284,20 @@ namespace UWP_Demo.Views
                     }
                 }
 
-                // ?? SUSPENSION & RESUME: Initialize suspension info display on page load
-                // ?? Shows current suspension state when user navigates to Settings
+                // 6. Suspension & Resume Handling: Initialize suspension info display on page load
                 RefreshSuspensionInfo_Click(sender, e);
                 
-                // ?? STATE MANAGEMENT: Initialize state info display on page load
+                // STATE MANAGEMENT: Initialize state info display on page load
                 RefreshStateInfo_Click(sender, e);
+                
+                // 7. Error Simulation & Handling: Initialize error log display
+                Task.Run(async () =>
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                    {
+                        await RefreshErrorLogDisplay();
+                    });
+                });
             }
             catch (Exception ex)
             {
@@ -452,6 +463,391 @@ namespace UWP_Demo.Views
                 if (StatusDisplay != null)
                 {
                     StatusDisplay.Text = $"Error clearing navigation state: {ex.Message}";
+                }
+            }
+        }
+
+        #endregion
+
+        #region Error Simulation & Handling
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Test file not found error
+        /// </summary>
+        private async void SimulateFileNotFound_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Testing file not found error");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateFileNotFoundErrorAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "File Not Found test completed! Check error log above.";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION: File not found test result: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to test file not found - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during file not found test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Test JSON parsing error
+        /// </summary>
+        private async void SimulateJsonError_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Testing JSON parsing error");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateJsonParsingErrorAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "JSON parsing test completed! Check error log above.";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION: JSON parsing test result: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to test JSON parsing - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during JSON parsing test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Test access denied error
+        /// </summary>
+        private async void SimulateAccessDenied_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Testing access denied error");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateAccessDeniedErrorAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Access denied test completed! Check error log above.";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION: Access denied test result: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to test access denied - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during access denied test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Test corrupted data error
+        /// </summary>
+        private async void SimulateCorruptedData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Testing corrupted data error");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateCorruptedFileErrorAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Corrupted data test completed! Check error log above.";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION: Corrupted data test result: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to test corrupted data - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during corrupted data test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Test network error
+        /// </summary>
+        private async void SimulateNetworkError_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Testing network error");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateNetworkFileErrorAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Network error test completed! Check error log above.";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION: Network error test result: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to test network error - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during network error test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Clear error log
+        /// </summary>
+        private async void ClearErrorLog_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Clearing error log");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                await errorService.ClearErrorLogAsync();
+                
+                // Update UI
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Error log cleared successfully!";
+                }
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine("?? ERROR SIMULATION: Error log cleared successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? ERROR SIMULATION ERROR: Failed to clear error log - {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error clearing error log: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Refresh error log display
+        /// </summary>
+        private async Task RefreshErrorLogDisplay()
+        {
+            try
+            {
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var statistics = errorService.GetErrorStatistics();
+                var sessionErrors = errorService.GetSessionErrors();
+                
+                var displayText = $"=== ERROR STATISTICS ===\n{statistics}\n\n";
+                
+                if (sessionErrors.Any())
+                {
+                    displayText += "=== RECENT ERRORS ===\n";
+                    foreach (var error in sessionErrors.TakeLast(5))
+                    {
+                        displayText += $"[{error.Timestamp:HH:mm:ss}] {error.ErrorType}\n";
+                        displayText += $"Operation: {error.Operation}\n";
+                        displayText += $"Message: {error.Message}\n";
+                        if (!string.IsNullOrEmpty(error.AdditionalInfo))
+                        {
+                            displayText += $"Info: {error.AdditionalInfo}\n";
+                        }
+                        displayText += "---\n";
+                    }
+                }
+                else
+                {
+                    displayText += "No errors logged in this session.\n";
+                }
+                
+                displayText += $"\nLog file saved as 'error_log.txt' in app local folder.\n";
+                displayText += $"Last updated: {DateTime.Now:HH:mm:ss}";
+                
+                if (ErrorLogDisplay != null)
+                {
+                    ErrorLogDisplay.Text = displayText;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ErrorLogDisplay != null)
+                {
+                    ErrorLogDisplay.Text = $"Error refreshing log display: {ex.Message}";
+                }
+            }
+        }
+
+        #endregion
+
+        #region Simple File Access Examples
+
+        /// <summary>
+        /// Simple example: Try to open a missing file and catch the exception
+        /// </summary>
+        private async void SimpleFileTest_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? SIMPLE EXAMPLE: Testing file not found");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.TryOpenNonExistentFileAsync("my_missing_file.txt");
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Simple file test completed! Check debug output.";
+                }
+                
+                // Show result in a dialog
+                var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "Simple File Test Result",
+                    Content = $"Result: {result}\n\nThis demonstrates basic exception handling when trying to open a file that doesn't exist.",
+                    CloseButtonText = "OK"
+                };
+                
+                await dialog.ShowAsync();
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? SIMPLE EXAMPLE: Result - {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? SIMPLE EXAMPLE ERROR: {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during simple file test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Example: Create a file, then delete it, then try to access it
+        /// </summary>
+        private async void CreateDeleteTest_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? CREATE/DELETE EXAMPLE: Testing file lifecycle");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.CreateAndDeleteFileExampleAsync();
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Create/Delete test completed! Check debug output.";
+                }
+                
+                // Show result in a dialog
+                var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "Create & Delete Test Result",
+                    Content = $"Result: {result}\n\nThis demonstrates creating a file, confirming it exists, deleting it, then trying to access the deleted file.",
+                    CloseButtonText = "OK"
+                };
+                
+                await dialog.ShowAsync();
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? CREATE/DELETE EXAMPLE: Result - {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? CREATE/DELETE EXAMPLE ERROR: {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during create/delete test: {ex.Message}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Example: Check if file exists before trying to open it (defensive programming)
+        /// </summary>
+        private async void SafeAccessTest_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? SAFE ACCESS EXAMPLE: Testing defensive file access");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SafeFileAccessExampleAsync("defensive_test_file.txt");
+                
+                // Update UI with result
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = "Safe access test completed! Check debug output.";
+                }
+                
+                // Show result in a dialog
+                var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "Safe Access Test Result",
+                    Content = $"Result: {result}\n\nThis demonstrates checking if a file exists before trying to open it, avoiding exceptions through defensive programming.",
+                    CloseButtonText = "OK"
+                };
+                
+                await dialog.ShowAsync();
+                
+                // Refresh error log display
+                await RefreshErrorLogDisplay();
+                
+                System.Diagnostics.Debug.WriteLine($"?? SAFE ACCESS EXAMPLE: Result - {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? SAFE ACCESS EXAMPLE ERROR: {ex.Message}");
+                if (StatusDisplay != null)
+                {
+                    StatusDisplay.Text = $"Error during safe access test: {ex.Message}";
                 }
             }
         }

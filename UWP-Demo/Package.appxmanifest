@@ -21,9 +21,9 @@
     </Application>
   </Applications>
   <Capabilities>
-    <!-- NETWORK API: Internet (Client) capability required for HTTP requests -->
+    <!-- NETWORK API: Internet (Client) capability required for HTTP requests - COMMENTED OUT -->
     <!-- Allows the app to access internet resources and make outbound connections -->
     <!-- Required for: JSONPlaceholder API, external HTTP requests, data import -->
-    <Capability Name="internetClient" />
+    <!-- <Capability Name="internetClient" /> -->
   </Capabilities>
 </Package>

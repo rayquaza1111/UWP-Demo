@@ -271,15 +271,13 @@ namespace UWP_Demo.Services
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Store form data when user navigates away
-        /// ?? Saves: Current form input to prevent data loss
-        /// ?? Call this: Before leaving EditPage with unsaved changes
+        /// Store form data when user navigates away
         /// </summary>
         public void SaveFormState(string firstName, string lastName, string email, string phone, string company, bool isEditing, int customerId)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT: Saving form state for customer ID: {customerId}");
+                System.Diagnostics.Debug.WriteLine($"Saving form state for customer ID: {customerId}");
                 
                 CurrentFormData = new FormData
                 {
@@ -292,21 +290,18 @@ namespace UWP_Demo.Services
                     CustomerId = customerId
                 };
                 
-                // ?? STATE MANAGEMENT: Mark form as dirty (has unsaved changes)
                 _localSettings.Values[FORM_DIRTY_KEY] = true;
                 
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Form state saved successfully");
+                System.Diagnostics.Debug.WriteLine("Form state saved successfully");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to save form state - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to save form state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Check if form has unsaved changes
-        /// ?? Returns: True if user has unsaved form data
-        /// ?? Usage: Show "unsaved changes" warning when navigating away
+        /// Check if form has unsaved changes
         /// </summary>
         public bool HasUnsavedChanges
         {
@@ -318,88 +313,86 @@ namespace UWP_Demo.Services
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Clear form dirty flag after successful save
-        /// ? Call this: After successfully saving form data
+        /// Clear form dirty flag after successful save
         /// </summary>
         public void MarkFormClean()
         {
             _localSettings.Values[FORM_DIRTY_KEY] = false;
-            System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Form marked as clean (saved)");
+            System.Diagnostics.Debug.WriteLine("Form marked as clean (saved)");
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Clear all stored state (fresh start)
-        /// ?? Clears: Selected customer, form data, navigation history
-        /// ?? Usage: When user explicitly cancels or after successful operations
+        /// Clear all stored state (fresh start)
         /// </summary>
         public void ClearAllState()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: Clearing all navigation state");
+                System.Diagnostics.Debug.WriteLine("Clearing all navigation state");
                 
                 SelectedCustomer = null;
                 CurrentFormData = null;
-                NavigationHistory = new List<NavigationEntry>(); // Navigation System: Clear navigation history
+                NavigationHistory = new List<NavigationEntry>();
                 _localSettings.Values.Remove(FORM_DIRTY_KEY);
                 _localSettings.Values.Remove(LAST_PAGE_KEY);
                 _localSettings.Values.Remove(EDIT_MODE_KEY);
                 
-                System.Diagnostics.Debug.WriteLine("?? STATE MANAGEMENT: All state cleared successfully");
+                System.Diagnostics.Debug.WriteLine("All state cleared successfully");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to clear state - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to clear state - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Add entry to navigation history
-        /// Navigation System: Tracks: Page visits for smart navigation and analytics
+        /// Add entry to navigation history
         /// </summary>
         public void AddNavigationEntry(string pageType, string pageTitle, string parameters = "")
         {
             try
             {
-                var history = NavigationHistory;
-                history.Add(new NavigationEntry
+                var entry = new NavigationEntry
                 {
                     PageType = pageType,
                     PageTitle = pageTitle,
                     Parameters = parameters,
                     NavigatedAt = DateTime.Now
-                });
-                NavigationHistory = history;
-                
-                System.Diagnostics.Debug.WriteLine($"Navigation System: Added navigation entry: {pageTitle}");
+                };
+
+                NavigationHistory.Add(entry);
+
+                // Keep only last 10 entries
+                if (NavigationHistory.Count > 10)
+                {
+                    NavigationHistory.RemoveAt(0);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Navigation entry added: {pageType} - {pageTitle}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to add navigation entry - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to add navigation entry - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ?? STATE MANAGEMENT: Get navigation state summary for debugging
-        /// ?? Returns: Comprehensive overview of current navigation state
+        /// Get navigation state summary for debugging
         /// </summary>
         public string GetStateSummary()
         {
             try
             {
-                var selectedCustomer = SelectedCustomer;
-                var formData = CurrentFormData;
-                var history = NavigationHistory;
-                
-                return $"Selected Customer: {selectedCustomer?.FullName ?? "None"}, " +
-                       $"Form Data: {(formData != null ? $"Customer {formData.CustomerId}" : "None")}, " +
-                       $"Has Unsaved Changes: {HasUnsavedChanges}, " +
-                       $"Navigation History: {history.Count} entries";
+                var summary = "Navigation State Summary:\n";
+                summary += $"Selected Customer: {(SelectedCustomer != null ? SelectedCustomer.FullName : "None")}\n";
+                summary += $"Has Unsaved Changes: {HasUnsavedChanges}\n";
+                summary += $"Form Data: {(CurrentFormData != null ? "Present" : "None")}\n";
+                summary += $"Navigation History: {NavigationHistory.Count} entries";
+                return summary;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"?? STATE MANAGEMENT ERROR: Failed to get state summary - {ex.Message}");
-                return "State summary unavailable";
+                return $"Error getting state summary: {ex.Message}";
             }
         }
 

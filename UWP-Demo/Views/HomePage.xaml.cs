@@ -13,29 +13,8 @@ namespace UWP_Demo.Views
         }
 
         /// <summary>
-        /// ?? SUSPENSION & RESUME: Handle welcome InfoBar closed event
-        /// ?? Dismisses the welcome message when user closes the InfoBar
-        /// ?? Integrates with SuspensionService to clear suspension state
-        /// ? Provides clean user experience with proper state management
+        /// Handle settings button click with multiple navigation approaches
         /// </summary>
-        private void WelcomeInfoBar_Closed(Microsoft.UI.Xaml.Controls.InfoBar sender, Microsoft.UI.Xaml.Controls.InfoBarClosedEventArgs args)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("?? SUSPENSION & RESUME: Welcome InfoBar closed by user");
-                
-                // ?? SUSPENSION & RESUME: Dismiss welcome message through ViewModel
-                if (DataContext is ViewModels.HomeViewModel viewModel)
-                {
-                    viewModel.DismissWelcomeMessage();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"?? SUSPENSION & RESUME ERROR: Failed to handle welcome close - {ex.Message}");
-            }
-        }
-
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -57,110 +36,107 @@ namespace UWP_Demo.Views
                 }
                 catch { /* Ignore button text update errors */ }
                 
-                // Navigation System: Try multiple navigation approaches
                 bool navigationAttempted = false;
                 
-                // Navigation System: Approach 1: MainPage method
+                // Approach 1: MainPage method
                 try
                 {
                     var rootFrame = Window.Current.Content as Frame;
                     if (rootFrame?.Content is MainPage mainPage)
                     {
-                        System.Diagnostics.Debug.WriteLine("Navigation System: Approach 1: Using MainPage.NavigateToSettings()");
+                        System.Diagnostics.Debug.WriteLine("Approach 1: Using MainPage.NavigateToSettings()");
                         mainPage.NavigateToSettings();
                         navigationAttempted = true;
-                        System.Diagnostics.Debug.WriteLine("Navigation System: Approach 1: SUCCESS");
+                        System.Diagnostics.Debug.WriteLine("Approach 1: SUCCESS");
                     }
                 }
                 catch (Exception ex1)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Navigation System: Approach 1 failed: {ex1.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Approach 1 failed: {ex1.Message}");
                 }
                 
-                // Navigation System: Approach 2: Direct frame navigation
+                // Approach 2: Direct frame navigation
                 if (!navigationAttempted)
                 {
                     try
                     {
-                        System.Diagnostics.Debug.WriteLine("Navigation System: Approach 2: Direct frame navigation");
+                        System.Diagnostics.Debug.WriteLine("Approach 2: Direct frame navigation");
                         var frame = Frame;
                         if (frame != null)
                         {
                             bool success = frame.Navigate(typeof(SettingsPage));
-                            System.Diagnostics.Debug.WriteLine($"Navigation System: Approach 2: Result = {success}");
+                            System.Diagnostics.Debug.WriteLine($"Approach 2: Result = {success}");
                             navigationAttempted = success;
                         }
                     }
                     catch (Exception ex2)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Navigation System: Approach 2 failed: {ex2.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Approach 2 failed: {ex2.Message}");
                     }
                 }
                 
-                // Navigation System: Approach 3: Root frame direct navigation
+                // Approach 3: Root frame direct navigation
                 if (!navigationAttempted)
                 {
                     try
                     {
-                        System.Diagnostics.Debug.WriteLine("Navigation System: Approach 3: Root frame direct navigation");
+                        System.Diagnostics.Debug.WriteLine("Approach 3: Root frame direct navigation");
                         var rootFrame = Window.Current.Content as Frame;
                         if (rootFrame != null)
                         {
                             bool success = rootFrame.Navigate(typeof(SettingsPage));
-                            System.Diagnostics.Debug.WriteLine($"Navigation System: Approach 3: Result = {success}");
+                            System.Diagnostics.Debug.WriteLine($"Approach 3: Result = {success}");
                             navigationAttempted = success;
                         }
                     }
                     catch (Exception ex3)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Navigation System: Approach 3 failed: {ex3.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Approach 3 failed: {ex3.Message}");
                     }
                 }
                 
                 if (!navigationAttempted)
                 {
-                    System.Diagnostics.Debug.WriteLine("Navigation System: [ERROR] ALL NAVIGATION APPROACHES FAILED!");
+                    System.Diagnostics.Debug.WriteLine("[ERROR] ALL NAVIGATION APPROACHES FAILED!");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Navigation System: [SUCCESS] NAVIGATION ATTEMPTED SUCCESSFULLY!");
+                    System.Diagnostics.Debug.WriteLine("[SUCCESS] NAVIGATION ATTEMPTED SUCCESSFULLY!");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System: [CRITICAL] ERROR in SettingsButton_Click: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Navigation System: [CRITICAL] Stack trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"[CRITICAL] ERROR in SettingsButton_Click: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[CRITICAL] Stack trace: {ex.StackTrace}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Handle customer edit navigation
-        /// Navigation System: Enhanced: Navigate through MainPage's NavigationView system
-        /// Navigation System: Called when user clicks Edit button on a customer
+        /// Handle customer edit navigation through MainPage's NavigationView system
         /// </summary>
         public void NavigateToEditCustomer(Customer customer)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System: Navigating to edit customer: {customer?.FullName}");
+                System.Diagnostics.Debug.WriteLine($"Navigating to edit customer: {customer?.FullName}");
                 
                 if (customer != null)
                 {
-                    // ?? STATE MANAGEMENT: Store customer state for editing
+                    // Store customer state for editing
                     var stateService = UWP_Demo.Services.NavigationStateService.Instance;
                     stateService.SetSelectedCustomerForEdit(customer);
                     
-                    // Navigation System: Check if we're inside MainPage with NavigationView
+                    // Check if we're inside MainPage with NavigationView
                     var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                     if (currentFrame?.Content is MainPage mainPage)
                     {
-                        // Navigation System: Navigate through MainPage's ContentFrame (NavigationView)
+                        // Navigate through MainPage's ContentFrame (NavigationView)
                         var contentFrame = mainPage.FindName("ContentFrame") as Windows.UI.Xaml.Controls.Frame;
                         if (contentFrame != null)
                         {
                             contentFrame.Navigate(typeof(EditPage), customer);
                             
-                            // Navigation System: Update NavigationView selection to Edit page
+                            // Update NavigationView selection to Edit page
                             var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
                             var editItem = mainPage.FindName("EditNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                             if (navView != null && editItem != null)
@@ -168,51 +144,49 @@ namespace UWP_Demo.Views
                                 navView.SelectedItem = editItem;
                             }
                             
-                            System.Diagnostics.Debug.WriteLine("Navigation System: Successfully navigated to EditPage through NavigationView");
+                            System.Diagnostics.Debug.WriteLine("Successfully navigated to EditPage through NavigationView");
                             return;
                         }
                     }
                     
-                    // Navigation System: FALLBACK: Direct frame navigation if not in NavigationView
+                    // FALLBACK: Direct frame navigation if not in NavigationView
                     if (Frame != null)
                     {
                         Frame.Navigate(typeof(EditPage), customer);
-                        System.Diagnostics.Debug.WriteLine("Navigation System: FALLBACK: Successfully navigated to EditPage via direct Frame");
+                        System.Diagnostics.Debug.WriteLine("FALLBACK: Successfully navigated to EditPage via direct Frame");
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to edit customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to navigate to edit customer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Handle new customer navigation
-        /// Navigation System: Enhanced: Navigate through MainPage's NavigationView system
-        /// Navigation System: Called when user wants to create a new customer
+        /// Handle new customer navigation through MainPage's NavigationView system
         /// </summary>
         public void NavigateToNewCustomer()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("Navigation System: Navigating to create new customer");
+                System.Diagnostics.Debug.WriteLine("Navigating to create new customer");
                 
-                // ?? STATE MANAGEMENT: Clear any existing state for fresh start
+                // Clear any existing state for fresh start
                 var stateService = UWP_Demo.Services.NavigationStateService.Instance;
                 stateService.ClearAllState();
                 
-                // Navigation System: Check if we're inside MainPage with NavigationView
+                // Check if we're inside MainPage with NavigationView
                 var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                 if (currentFrame?.Content is MainPage mainPage)
                 {
-                    // Navigation System: Navigate through MainPage's ContentFrame (NavigationView)
+                    // Navigate through MainPage's ContentFrame (NavigationView)
                     var contentFrame = mainPage.FindName("ContentFrame") as Windows.UI.Xaml.Controls.Frame;
                     if (contentFrame != null)
                     {
                         contentFrame.Navigate(typeof(EditPage), null);
                         
-                        // Navigation System: Update NavigationView selection to Edit page
+                        // Update NavigationView selection to Edit page
                         var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
                         var editItem = mainPage.FindName("EditNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                         if (navView != null && editItem != null)
@@ -220,36 +194,36 @@ namespace UWP_Demo.Views
                             navView.SelectedItem = editItem;
                         }
                         
-                        System.Diagnostics.Debug.WriteLine("Navigation System: Successfully navigated to new customer EditPage through NavigationView");
+                        System.Diagnostics.Debug.WriteLine("Successfully navigated to new customer EditPage through NavigationView");
                         return;
                     }
                 }
                 
-                // Navigation System: FALLBACK: Direct frame navigation if not in NavigationView
+                // FALLBACK: Direct frame navigation if not in NavigationView
                 if (Frame != null)
                 {
                     Frame.Navigate(typeof(EditPage), null);
-                    System.Diagnostics.Debug.WriteLine("Navigation System: FALLBACK: Successfully navigated to new customer EditPage via direct Frame");
+                    System.Diagnostics.Debug.WriteLine("FALLBACK: Successfully navigated to new customer EditPage via direct Frame");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to new customer - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to navigate to new customer - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Navigate to customers page
+        /// Navigate to customers page
         /// </summary>
         private void ViewCustomersButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Navigation System: Navigate to customers page through MainPage
+                // Navigate to customers page through MainPage
                 var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                 if (currentFrame?.Content is MainPage mainPage)
                 {
-                    // Navigation System: Find and select the customers navigation item
+                    // Find and select the customers navigation item
                     var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
                     var customersItem = mainPage.FindName("CustomersNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                     if (navView != null && customersItem != null)
@@ -260,22 +234,22 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to customers - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to navigate to customers - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Navigate to file operations page
+        /// Navigate to file operations page
         /// </summary>
         private void ManageFilesButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Navigation System: Navigate to file operations page through MainPage
+                // Navigate to file operations page through MainPage
                 var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
                 if (currentFrame?.Content is MainPage mainPage)
                 {
-                    // Navigation System: Find and select the file operations navigation item
+                    // Find and select the file operations navigation item
                     var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
                     var fileOpsItem = mainPage.FindName("FileOpsNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                     if (navView != null && fileOpsItem != null)
@@ -286,33 +260,102 @@ namespace UWP_Demo.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to file operations - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to navigate to file operations - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Navigate to network API demo page
+        /// 6. Suspension & Resume Handling: Test suspension functionality
         /// </summary>
-        private void NetworkApiButton_Click(object sender, RoutedEventArgs e)
+        private void TestSuspensionButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Navigation System: Navigate to network API page through MainPage
-                var currentFrame = Windows.UI.Xaml.Window.Current.Content as Windows.UI.Xaml.Controls.Frame;
-                if (currentFrame?.Content is MainPage mainPage)
+                System.Diagnostics.Debug.WriteLine("=== MANUAL SUSPENSION TEST ===");
+                
+                // Get the ViewModel and test suspension
+                if (DataContext is ViewModels.HomeViewModel viewModel)
                 {
-                    // Navigation System: Find and select the network API navigation item
-                    var navView = mainPage.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
-                    var networkItem = mainPage.FindName("NetworkNavItem") as Microsoft.UI.Xaml.Controls.NavigationViewItem;
-                    if (navView != null && networkItem != null)
-                    {
-                        navView.SelectedItem = networkItem;
-                    }
+                    // First, debug current suspension state
+                    viewModel.DebugSuspensionState();
+                    
+                    // Then test suspension and resume
+                    viewModel.TestSuspensionAndResume();
+                    
+                    // Also test window minimization simulation
+                    viewModel.TestWindowMinimization();
+                    
+                    System.Diagnostics.Debug.WriteLine("Manual suspension test completed - check welcome message");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Could not get HomeViewModel from DataContext");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to navigate to network API - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"ERROR in manual suspension test: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 6. Suspension & Resume Handling: Handle welcome message dismissal
+        /// </summary>
+        private void WelcomeInfoBar_Closed(object sender, Microsoft.UI.Xaml.Controls.InfoBarClosedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("6. Suspension & Resume Handling: Welcome InfoBar closed");
+                
+                // Let the ViewModel handle the dismissal
+                if (DataContext is ViewModels.HomeViewModel viewModel)
+                {
+                    viewModel.DismissWelcomeMessage();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"6. Suspension & Resume Handling ERROR: Welcome InfoBar close error - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 7. Error Simulation & Handling: Quick error test for demonstration
+        /// </summary>
+        private async void QuickErrorTest_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("?? QUICK ERROR TEST: Testing file not found error from HomePage");
+                
+                var errorService = UWP_Demo.Services.ErrorSimulationService.Instance;
+                var result = await errorService.SimulateFileNotFoundErrorAsync();
+                
+                // Show result to user
+                var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "Error Test Result",
+                    Content = $"Quick error test completed!\n\nResult: {result}\n\nCheck Visual Studio Debug Output for detailed error logs.\n\nFor more error tests, go to Settings page.",
+                    CloseButtonText = "OK"
+                };
+                
+                await dialog.ShowAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"?? QUICK ERROR TEST: Result - {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"?? QUICK ERROR TEST ERROR: {ex.Message}");
+                
+                // Show error to user
+                var dialog = new Windows.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "Error Test Error",
+                    Content = $"An error occurred during the error test: {ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                
+                await dialog.ShowAsync();
             }
         }
     }

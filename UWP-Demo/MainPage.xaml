@@ -104,7 +104,8 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
             
-            <!-- ?? NETWORK API: HTTP API demonstrations -->
+            <!-- ?? NETWORK API: HTTP API demonstrations - COMMENTED OUT -->
+            <!--
             <muxc:NavigationViewItem x:Name="NetworkNavItem"
                                      Content="Network API"
                                      Tag="network"
@@ -113,6 +114,7 @@
                     <SymbolIcon Symbol="Globe" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
+            -->
             
             <!-- ?? FILE OPERATIONS: File management and import/export -->
             <muxc:NavigationViewItem x:Name="FileOpsNavItem"

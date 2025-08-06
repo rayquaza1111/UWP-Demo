@@ -8,23 +8,15 @@ using System.Windows.Input;
 using UWP_Demo.Commands;
 using UWP_Demo.Models;
 using UWP_Demo.Services;
-using UWP_Demo.Views;  // ?? STATE MANAGEMENT: Import Views namespace for HomePage
+using UWP_Demo.Views;
 
 namespace UWP_Demo.ViewModels
 {
     /// <summary>
-    /// FILE I/O: Home page view model that orchestrates file-based customer management
-    /// Acts as intermediary between UI and CustomerService file operations
-    /// 
-    /// FILE I/O RESPONSIBILITIES:
-    /// 1. Trigger initial file load when app starts
-    /// 2. Handle user actions that require file saves (Add, Delete)
-    /// 3. Provide file operation status feedback to UI
-    /// 4. Manage file operation error handling and user notifications
+    /// Home page view model that orchestrates file-based customer management
     /// </summary>
     public class HomeViewModel : INotifyPropertyChanged
     {
-        // FILE I/O: Service that handles all file operations
         private readonly CustomerService _customerService;
         private readonly DialogService _dialogService;
 
@@ -32,18 +24,14 @@ namespace UWP_Demo.ViewModels
         private ObservableCollection<Customer> _filteredCustomers;
         private Customer _selectedCustomer;
         private string _searchText = "";
-        
-        // FILE I/O: Status property to show current file operation to user
-        private string _fileStatus = "Loading...";  // FILE I/O: Tracks and displays file operation status
-        
-        // SUSPENSION & RESUME: Welcome message for users returning to the app
+        private string _fileStatus = "Loading...";
+        // 6. Suspension & Resume Handling: Welcome message field
         private string _welcomeMessage = "";
 
         public HomeViewModel()
         {
-            System.Diagnostics.Debug.WriteLine("FILE I/O: HomeViewModel constructor - initializing file-based customer management");
+            System.Diagnostics.Debug.WriteLine("HomeViewModel constructor - initializing file-based customer management");
             
-            // FILE I/O: Initialize service that handles file persistence
             _customerService = new CustomerService();
             _dialogService = new DialogService();
 
@@ -51,14 +39,11 @@ namespace UWP_Demo.ViewModels
             FilteredCustomers = new ObservableCollection<Customer>();
 
             InitializeCommands();
-            
-            // SUSPENSION & RESUME: Initialize welcome message based on app state
+            // 6. Suspension & Resume Handling: Initialize welcome message
             InitializeWelcomeMessage();
+            LoadCustomersAsync();
             
-            // FILE I/O: Start the file loading process immediately when ViewModel is created
-            LoadCustomersAsync();  // FILE I/O: This triggers the initial file load
-            
-            System.Diagnostics.Debug.WriteLine("FILE I/O: HomeViewModel constructor completed, file loading initiated");
+            System.Diagnostics.Debug.WriteLine("HomeViewModel constructor completed, file loading initiated");
         }
 
         public string Title => "Customer Management";
@@ -75,30 +60,7 @@ namespace UWP_Demo.ViewModels
         }
 
         /// <summary>
-        /// SUSPENSION & RESUME: Welcome message property for displaying app state information
-        /// Shows welcome back messages, time away, and suspension state details
-        /// </summary>
-        public string WelcomeMessage
-        {
-            get => _welcomeMessage;
-            set
-            {
-                _welcomeMessage = value;
-                OnPropertyChanged();
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message updated: {value}");
-            }
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Whether to show the welcome message
-        /// </summary>
-        public bool ShowWelcomeMessage => !string.IsNullOrEmpty(WelcomeMessage);
-
-        /// <summary>
-        /// WINUI 2 UI ENHANCEMENT: Enhanced file status for InfoBar display
-        /// Replaces basic text status with rich InfoBar messaging
-        /// Shows different severity levels and actionable messages
-        /// Automatically updates InfoBar appearance based on operation status
+        /// Enhanced file status for InfoBar display
         /// </summary>
         public string FileStatus
         {
@@ -106,21 +68,14 @@ namespace UWP_Demo.ViewModels
             set
             {
                 _fileStatus = value;
-                OnPropertyChanged();  // FILE I/O: Notify UI to update InfoBar
-
-                // WINUI 2 UI ENHANCEMENT: Update InfoBar severity based on message content
-                // This provides automatic color coding and iconography for different states
+                OnPropertyChanged();
                 UpdateInfoBarSeverity(value);
-                
-                System.Diagnostics.Debug.WriteLine($"WINUI 2 UI ENHANCEMENT: InfoBar status updated: {value}");
+                System.Diagnostics.Debug.WriteLine($"InfoBar status updated: {value}");
             }
         }
 
         /// <summary>
-        /// WINUI 2 UI ENHANCEMENT: InfoBar severity property for different message types
-        /// Controls the visual appearance of the InfoBar (color, icon, style)
-        /// Provides semantic meaning to status messages through visual indicators
-        /// Values: Informational (blue), Success (green), Warning (yellow), Error (red)
+        /// InfoBar severity property for different message types
         /// </summary>
         private Microsoft.UI.Xaml.Controls.InfoBarSeverity _infoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
         public Microsoft.UI.Xaml.Controls.InfoBarSeverity InfoBarSeverity
@@ -129,39 +84,27 @@ namespace UWP_Demo.ViewModels
             set
             {
                 _infoBarSeverity = value;
-                OnPropertyChanged();  // WINUI 2: Notify InfoBar to update visual appearance
+                OnPropertyChanged();
             }
         }
 
         /// <summary>
-        /// WINUI 2 UI ENHANCEMENT: Update InfoBar severity based on file operation status
-        /// Automatically determines appropriate visual indicator based on message content
-        /// Provides intelligent status categorization for better user experience
-        /// 
-        /// WINUI 2 SEVERITY MAPPING:
-        /// - Error (Red): "Error", "Failed" keywords
-        /// - Warning (Yellow): "Loading", "Adding", "Deleting" keywords (operations in progress)
-        /// - Success (Green): "Success", "Added", "Deleted", "Loaded" keywords (completed operations)  
-        /// - Informational (Blue): Default for general information
+        /// Update InfoBar severity based on file operation status
         /// </summary>
         private void UpdateInfoBarSeverity(string status)
         {
-            // WINUI 2 UI ENHANCEMENT: Error states - red InfoBar with error icon
             if (status.Contains("Error") || status.Contains("Failed"))
             {
                 InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
             }
-            // WINUI 2 UI ENHANCEMENT: Warning states - yellow InfoBar with warning icon
             else if (status.Contains("Loading") || status.Contains("Adding") || status.Contains("Deleting"))
             {
                 InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning;
             }
-            // WINUI 2 UI ENHANCEMENT: Success states - green InfoBar with checkmark icon
             else if (status.Contains("Success") || status.Contains("Added") || status.Contains("Deleted") || status.Contains("Loaded"))
             {
                 InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
             }
-            // WINUI 2 UI ENHANCEMENT: Default informational state - blue InfoBar with info icon
             else
             {
                 InfoBarSeverity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
@@ -213,57 +156,50 @@ namespace UWP_Demo.ViewModels
 
         public bool HasCustomers => Customers != null && Customers.Count > 0;
 
-        // FILE I/O: Commands that trigger file operations
-        public ICommand AddCustomerCommand { get; private set; }        // FILE I/O: Triggers add + auto-save
+        // 6. Suspension & Resume Handling: Welcome message properties
+        public string WelcomeMessage
+        {
+            get => _welcomeMessage;
+            set
+            {
+                _welcomeMessage = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowWelcomeMessage));
+            }
+        }
+
+        public bool ShowWelcomeMessage => !string.IsNullOrEmpty(_welcomeMessage);
+
+        // Commands
+        public ICommand AddCustomerCommand { get; private set; }
         public ICommand EditSelectedCustomerCommand { get; private set; }
-        public ICommand DeleteSelectedCustomerCommand { get; private set; }  // FILE I/O: Triggers delete + auto-save
-        public ICommand RefreshCommand { get; private set; }                 // FILE I/O: Triggers reload from file
-        public ICommand LoadExternalDataCommand { get; private set; }        // FILE I/O: Triggers bulk add + auto-save
-        public ICommand ShowFileInfoCommand { get; private set; }            // FILE I/O: Shows file details
-        public ICommand DismissWelcomeCommand { get; private set; }          // SUSPENSION & RESUME: Dismisses welcome message
-        public ICommand RefreshWelcomeCommand { get; private set; }          // SUSPENSION & RESUME: Refreshes welcome message
-        public ICommand NavigateToEditCommand { get; private set; }          // ?? STATE MANAGEMENT: Navigate to edit with state
-        public ICommand NavigateToNewCustomerCommand { get; private set; }   // ?? STATE MANAGEMENT: Navigate to new customer
+        public ICommand DeleteSelectedCustomerCommand { get; private set; }
+        public ICommand RefreshCommand { get; private set; }
+        public ICommand LoadExternalDataCommand { get; private set; }
+        public ICommand ShowFileInfoCommand { get; private set; }
+        // 6. Suspension & Resume Handling: Commands for welcome message
+        public ICommand DismissWelcomeCommand { get; private set; }
+        public ICommand RefreshWelcomeCommand { get; private set; }
+        public ICommand NavigateToEditCommand { get; private set; }
+        public ICommand NavigateToNewCustomerCommand { get; private set; }
 
         private void InitializeCommands()
         {
-            System.Diagnostics.Debug.WriteLine("FILE I/O: Initializing commands that will trigger file operations...");
+            System.Diagnostics.Debug.WriteLine("Initializing commands...");
             
-            // FILE I/O: Wire up commands to methods that perform file operations
-            AddCustomerCommand = new RelayCommand(AddCustomer);                    // FILE I/O: Add customer ? save to file
+            AddCustomerCommand = new RelayCommand(AddCustomer);
             EditSelectedCustomerCommand = new RelayCommand<Customer>(EditCustomer);
-            DeleteSelectedCustomerCommand = new RelayCommand<Customer>(DeleteCustomer);  // FILE I/O: Delete customer ? save to file
-            RefreshCommand = new RelayCommand(LoadCustomersAsync);                       // FILE I/O: Reload from file
-            LoadExternalDataCommand = new RelayCommand(LoadExternalData);               // FILE I/O: Add sample data ? save to file
-            ShowFileInfoCommand = new RelayCommand(ShowFileInfo);                      // FILE I/O: Show file details
-            DismissWelcomeCommand = new RelayCommand(DismissWelcomeMessage);           // SUSPENSION & RESUME: Dismiss welcome message
-            RefreshWelcomeCommand = new RelayCommand(RefreshWelcomeMessage);           // SUSPENSION & RESUME: Refresh welcome message
-            NavigateToEditCommand = new RelayCommand<Customer>(NavigateToEditCustomer);     // ?? STATE MANAGEMENT: Navigate to edit
-            NavigateToNewCustomerCommand = new RelayCommand(NavigateToNewCustomer);         // ?? STATE MANAGEMENT: Navigate to new customer
+            DeleteSelectedCustomerCommand = new RelayCommand<Customer>(DeleteCustomer);
+            RefreshCommand = new RelayCommand(() => LoadCustomersAsync());
+            LoadExternalDataCommand = new RelayCommand(LoadExternalData);
+            ShowFileInfoCommand = new RelayCommand(ShowFileInfo);
+            // 6. Suspension & Resume Handling: Commands for welcome message
+            DismissWelcomeCommand = new RelayCommand(DismissWelcomeMessage);
+            RefreshWelcomeCommand = new RelayCommand(RefreshWelcomeMessage);
+            NavigateToEditCommand = new RelayCommand<Customer>(NavigateToEditCustomer);
+            NavigateToNewCustomerCommand = new RelayCommand(NavigateToNewCustomer);
             
-            System.Diagnostics.Debug.WriteLine("FILE I/O: Commands initialized - ready for file operations");
-        }
-
-        /// <summary>
-        /// SUSPENSION & RESUME: Refresh welcome message
-        /// Useful for testing and updating message after suspension state changes
-        /// </summary>
-        public void RefreshWelcomeMessage()
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Refreshing welcome message");
-                
-                // SUSPENSION & RESUME: Get fresh welcome message
-                WelcomeMessage = SuspensionService.Instance.GetWelcomeBackMessage();
-                OnPropertyChanged(nameof(ShowWelcomeMessage));
-                
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message refreshed: '{WelcomeMessage}'");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to refresh welcome message - {ex.Message}");
-            }
+            System.Diagnostics.Debug.WriteLine("Commands initialized successfully");
         }
 
         /// <summary>
@@ -366,49 +302,113 @@ namespace UWP_Demo.ViewModels
 
         #region Missing Methods
 
-        /// <summary>
-        /// SUSPENSION & RESUME: Initialize welcome message based on app state
-        /// </summary>
+        // 6. Suspension & Resume Handling: Initialize welcome message based on app state
         private void InitializeWelcomeMessage()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Initializing welcome message...");
+                System.Diagnostics.Debug.WriteLine("Initializing welcome message...");
                 
-                // SUSPENSION & RESUME: Always get and show welcome message
+                // Get welcome message from SuspensionService
                 WelcomeMessage = SuspensionService.Instance.GetWelcomeBackMessage();
-                
-                // SUSPENSION & RESUME: Log suspension state details
-                var suspensionSummary = SuspensionService.Instance.GetSuspensionSummary();
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: {suspensionSummary}");
-                
-                // SUSPENSION & RESUME: Ensure UI updates
                 OnPropertyChanged(nameof(ShowWelcomeMessage));
                 
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME: Welcome message initialized: '{WelcomeMessage}' (ShowWelcomeMessage: {ShowWelcomeMessage})");
+                System.Diagnostics.Debug.WriteLine($"Welcome message initialized: '{WelcomeMessage}' (ShowWelcomeMessage: {ShowWelcomeMessage})");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SUSPENSION & RESUME ERROR: Failed to initialize welcome message - {ex.Message}");
-                WelcomeMessage = "?? Welcome to Customer Management!";
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize welcome message - {ex.Message}");
+                WelcomeMessage = "Welcome to Customer Management!";
                 OnPropertyChanged(nameof(ShowWelcomeMessage));
             }
         }
 
-        /// <summary>
-        /// SUSPENSION & RESUME: Dismiss welcome message
-        /// </summary>
+        // 6. Suspension & Resume Handling: Dismiss welcome message
         public void DismissWelcomeMessage()
         {
-            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Dismissing welcome message");
+            System.Diagnostics.Debug.WriteLine("Dismissing welcome message");
             
-            // SUSPENSION & RESUME: Clear suspension flag when user dismisses message
+            // Clear suspension flag when user dismisses message
             SuspensionService.Instance.ClearSuspensionFlag();
             
             WelcomeMessage = "";
             OnPropertyChanged(nameof(ShowWelcomeMessage));
-            
-            System.Diagnostics.Debug.WriteLine("SUSPENSION & RESUME: Welcome message dismissed and suspension flag cleared");
+            System.Diagnostics.Debug.WriteLine("Welcome message dismissed and suspension flag cleared");
+        }
+
+        // 6. Suspension & Resume Handling: Refresh welcome message
+        private void RefreshWelcomeMessage()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Refreshing welcome message...");
+                WelcomeMessage = SuspensionService.Instance.GetWelcomeBackMessage();
+                OnPropertyChanged(nameof(ShowWelcomeMessage));
+                System.Diagnostics.Debug.WriteLine($"Welcome message refreshed: '{WelcomeMessage}'");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to refresh welcome message - {ex.Message}");
+            }
+        }
+
+        // 6. Suspension & Resume Handling: Debug suspension state
+        public void DebugSuspensionState()
+        {
+            try
+            {
+                var suspensionService = SuspensionService.Instance;
+                var debugInfo = suspensionService.GetDetailedDebugInfo();
+                System.Diagnostics.Debug.WriteLine("=== SUSPENSION STATE DEBUG ===");
+                System.Diagnostics.Debug.WriteLine(debugInfo);
+                System.Diagnostics.Debug.WriteLine("=== END SUSPENSION DEBUG ===");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to debug suspension state - {ex.Message}");
+            }
+        }
+
+        // 6. Suspension & Resume Handling: Test suspension and resume
+        public void TestSuspensionAndResume()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Testing suspension and resume...");
+                
+                // Test suspension 30 seconds ago
+                SuspensionService.Instance.SetTestSuspensionState(30);
+                
+                // Refresh welcome message
+                InitializeWelcomeMessage();
+                
+                System.Diagnostics.Debug.WriteLine("Test suspension completed - welcome message should be visible");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to test suspension and resume - {ex.Message}");
+            }
+        }
+
+        // 6. Suspension & Resume Handling: Test window minimization
+        public void TestWindowMinimization()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Testing window minimization simulation...");
+                
+                // Simulate the app being away for 2 minutes
+                SuspensionService.Instance.SetTestSuspensionState(120);
+                
+                // Update welcome message
+                InitializeWelcomeMessage();
+                
+                System.Diagnostics.Debug.WriteLine("Window minimization test completed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to test window minimization - {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -418,7 +418,7 @@ namespace UWP_Demo.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("FILE I/O: LoadCustomersAsync - requesting customer data from file");
+                System.Diagnostics.Debug.WriteLine("LoadCustomersAsync - requesting customer data from file");
                 
                 // FILE I/O: Update status to show file loading is in progress
                 FileStatus = "Loading customers from file...";
@@ -474,7 +474,7 @@ namespace UWP_Demo.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("FILE I/O: AddCustomer - starting add operation with file save");
+                System.Diagnostics.Debug.WriteLine("AddCustomer - starting add operation with file save");
                 
                 // FILE I/O: Update status to show add operation is in progress
                 FileStatus = "Adding new customer...";
@@ -502,7 +502,7 @@ namespace UWP_Demo.ViewModels
                     "Customer Added", 
                     $"Successfully added {newCustomer.FullName} and saved to file!");
                 
-                System.Diagnostics.Debug.WriteLine($"FILE I/O: AddCustomer completed - {newCustomer.FullName} added and saved to file");
+                System.Diagnostics.Debug.WriteLine($"AddCustomer completed - {newCustomer.FullName} added and saved to file");
             }
             catch (Exception ex)
             {
@@ -514,15 +514,18 @@ namespace UWP_Demo.ViewModels
             }
         }
 
+        /// <summary>
+        /// Edit customer command handler
+        /// </summary>
         private async void EditCustomer(Customer customer)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"FILE I/O: EditCustomer called for {customer?.FullName}");
+                System.Diagnostics.Debug.WriteLine($"EditCustomer called for {customer?.FullName}");
                 
                 if (customer != null)
                 {
-                    // FILE I/O: Edit functionality would call UpdateCustomerAsync() which auto-saves to file
+                    // Edit functionality would call UpdateCustomerAsync() which auto-saves to file
                     await _dialogService.ShowMessageAsync("Edit", $"Edit feature for {customer.FullName} coming soon!");
                 }
             }
@@ -533,17 +536,17 @@ namespace UWP_Demo.ViewModels
         }
 
         /// <summary>
-        /// FILE I/O: DELETE CUSTOMER OPERATION - Removes customer and triggers auto-save to file
+        /// Delete customer operation - removes customer and triggers auto-save to file
         /// </summary>
         private async void DeleteCustomer(Customer customer)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"FILE I/O: DeleteCustomer - starting delete operation for {customer?.FullName}");
+                System.Diagnostics.Debug.WriteLine($"DeleteCustomer - starting delete operation for {customer?.FullName}");
                 
                 if (customer == null) return;
 
-                // FILE I/O: Confirm deletion with user - emphasize file persistence
+                // Confirm deletion with user
                 var result = await _dialogService.ShowConfirmationAsync(
                     "Delete Customer",
                     $"Are you sure you want to delete {customer.FullName}?\n\nThis will permanently remove them from the file.",
@@ -552,31 +555,28 @@ namespace UWP_Demo.ViewModels
 
                 if (result == Windows.UI.Xaml.Controls.ContentDialogResult.Primary)
                 {
-                    // FILE I/O: Update status to show delete operation is in progress
                     FileStatus = $"Deleting {customer.FullName}...";
                     
-                    // FILE I/O: Delete customer from service - this triggers automatic save to file
-                    await _customerService.DeleteCustomerAsync(customer.Id);  // FILE I/O: Delete + auto-save to file
+                    // Delete customer from service - this triggers automatic save to file
+                    await _customerService.DeleteCustomerAsync(customer.Id);
                     
                     // Update UI immediately for responsive feel
                     Customers.Remove(customer);
                     FilterCustomers();
                     
-                    // FILE I/O: Update status to confirm successful deletion and save
                     FileStatus = $"Deleted customer: {customer.FullName}";
                     
-                    // FILE I/O: Show user confirmation that data was removed from file
+                    // Show user confirmation that data was removed from file
                     await _dialogService.ShowMessageAsync(
                         "Customer Deleted", 
                         $"Successfully deleted {customer.FullName} and updated file!");
-                    
-                    System.Diagnostics.Debug.WriteLine($"FILE I/O: DeleteCustomer completed - {customer.FullName} deleted and file updated");
+                
+                    System.Diagnostics.Debug.WriteLine($"DeleteCustomer completed - {customer.FullName} deleted and file updated");
                 }
             }
             catch (Exception ex)
             {
-                // FILE I/O: Handle delete/save errors with user notification
-                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to delete customer and update file - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to delete customer and update file - {ex.Message}");
                 FileStatus = $"Error deleting customer: {ex.Message}";
                 
                 await _dialogService.ShowMessageAsync("Error", $"Failed to delete customer: {ex.Message}");
@@ -584,46 +584,52 @@ namespace UWP_Demo.ViewModels
         }
 
         /// <summary>
-        /// FILE I/O: BULK ADD OPERATION - Loads sample data and triggers auto-save to file
+        /// Load sample data operation
         /// </summary>
         private async void LoadExternalData()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("FILE I/O: LoadExternalData - starting bulk add operation with file save");
+                System.Diagnostics.Debug.WriteLine("LoadExternalData - starting bulk add operation with file save");
                 
-                // FILE I/O: Update status to show bulk loading is in progress
                 FileStatus = "Loading sample data...";
                 
-                // Create sample customer data
                 var sampleCustomers = new[]
                 {
                     new Customer { FirstName = "Alice", LastName = "Johnson", Email = "alice@example.com", Company = "Tech Corp" },
-                    new Customer { FirstName = "Bob", LastName = "Wilson", Email = "bob@example.com", Phone = "555-0124", Company = "Marketing Inc" },
-                    new Customer { FirstName = "Carol", LastName = "Davis", Email = "carol@example.com", Phone = "555-0125", Company = "Design Studio" }
+                    new Customer { FirstName = "Bob", LastName = "Wilson", Email = "bob@wilson.net", Company = "Design Studio" },
+                    new Customer { FirstName = "Carol", LastName = "Davis", Email = "carol.davis@business.com", Company = "Marketing Solutions" }
                 };
 
-                // FILE I/O: Add each customer - each triggers an auto-save to file
+                int addedCount = 0;
                 foreach (var customer in sampleCustomers)
                 {
-                    await _customerService.AddCustomerAsync(customer);  // FILE I/O: Add + auto-save to file
-                    System.Diagnostics.Debug.WriteLine($"FILE I/O: Added sample customer {customer.FullName} and saved to file");
+                    try
+                    {
+                        await _customerService.AddCustomerAsync(customer);
+                        addedCount++;
+                        
+                        System.Diagnostics.Debug.WriteLine($"Added sample customer: {customer.FullName}");
+                    }
+                    catch (Exception customerEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to add sample customer {customer.FullName}: {customerEx.Message}");
+                    }
                 }
 
-                // FILE I/O: Refresh UI by reloading from file to show all new data
-                LoadCustomersAsync();  // FILE I/O: Reload from file to show updated data
+                LoadCustomersAsync();
                 
-                // FILE I/O: Show user confirmation that all data was saved to file
+                FileStatus = $"Added {addedCount} sample customers to file";
+                
                 await _dialogService.ShowMessageAsync(
                     "Sample Data Loaded", 
-                    $"Added {sampleCustomers.Length} sample customers and saved to file!");
+                    $"Successfully added {addedCount} sample customers!");
                 
-                System.Diagnostics.Debug.WriteLine($"FILE I/O: LoadExternalData completed - {sampleCustomers.Length} customers added and saved to file");
+                System.Diagnostics.Debug.WriteLine($"LoadExternalData completed - {addedCount} customers added and saved to file");
             }
             catch (Exception ex)
             {
-                // FILE I/O: Handle bulk add/save errors with user notification
-                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to load sample data and save to file - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load external data and save to file - {ex.Message}");
                 FileStatus = $"Error loading sample data: {ex.Message}";
                 
                 await _dialogService.ShowMessageAsync("Error", $"Failed to load sample data: {ex.Message}");
@@ -637,7 +643,7 @@ namespace UWP_Demo.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("FILE I/O: ShowFileInfo - requesting file details for user display");
+                System.Diagnostics.Debug.WriteLine("ShowFileInfo - requesting file details for user display");
                 
                 // FILE I/O: Get file information from service
                 var fileInfo = await _customerService.GetFileInfoAsync();  // FILE I/O: Query file system details
@@ -645,15 +651,14 @@ namespace UWP_Demo.ViewModels
                 // FILE I/O: Display file details to user
                 await _dialogService.ShowMessageAsync("File Information", fileInfo);
                 
-                System.Diagnostics.Debug.WriteLine($"FILE I/O: Displayed file info to user: {fileInfo}");
+                System.Diagnostics.Debug.WriteLine($"Displayed file info to user: {fileInfo}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"FILE I/O ERROR: Failed to get file info - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to get file info - {ex.Message}");
                 await _dialogService.ShowMessageAsync("Error", $"Failed to get file info: {ex.Message}");
             }
         }
-
         #endregion
     }
 }

@@ -30,17 +30,17 @@ namespace UWP_Demo
             }
         }
 
-        // 🔄 SUSPENSION & RESUME: Properties to track app launch state
-        public bool WasResumedFromSuspension { get; private set; } = false;
-        public string LaunchInformation { get; private set; } = "";
+        // 6. Suspension & Resume Handling: Properties to track app launch state - COMMENTED OUT
+        // public bool WasResumedFromSuspension { get; private set; } = false;
+        // public string LaunchInformation { get; private set; } = "";
 
-        // Navigation System: Page type mapping for navigation
+        // Page type mapping for navigation
         private readonly Dictionary<string, Type> _pageTypeMap = new Dictionary<string, Type>
         {
             { "home", typeof(HomePage) },
             { "customers", typeof(CustomersPage) }, // Navigation System: Dedicated customer page
             { "edit", typeof(EditPage) },
-            { "network", typeof(NetworkPage) }, // Navigation System: HTTP API demonstrations page
+            // { "network", typeof(NetworkPage) }, // Network functionality disabled
             { "fileops", typeof(FileOperationsPage) }, // Navigation System: Dedicated file operations page
             { "reports", typeof(ReportsPage) },
             { "mobile", typeof(MobilePage) },
@@ -48,13 +48,13 @@ namespace UWP_Demo
             { "about", typeof(AboutPage) }
         };
 
-        // Navigation System: Page title mapping
+        // Page title mapping
         private readonly Dictionary<string, string> _pageTitleMap = new Dictionary<string, string>
         {
             { "home", "Home Dashboard" },
             { "customers", "Customer Management" },
             { "edit", "Customer Editor" },
-            { "network", "Network API Demo" },
+            // { "network", "Network API Demo" }, // Network functionality disabled
             { "fileops", "File Operations" },
             { "reports", "Analytics & Reports" },
             { "mobile", "Mobile Synchronization" },
@@ -62,13 +62,13 @@ namespace UWP_Demo
             { "about", "About Customer Manager" }
         };
 
-        // Navigation System: Breadcrumb mapping
+        // Breadcrumb mapping
         private readonly Dictionary<string, string> _breadcrumbMap = new Dictionary<string, string>
         {
             { "home", "Home" },
             { "customers", "Home > Customers" },
             { "edit", "Home > Customers > Edit" },
-            { "network", "Home > Network API" },
+            // { "network", "Home > Network API" }, // Network functionality disabled
             { "fileops", "Home > File Operations" },
             { "reports", "Home > Reports" },
             { "mobile", "Home > Mobile Sync" },
@@ -86,36 +86,6 @@ namespace UWP_Demo
             NavigateToPage("home");
             
             System.Diagnostics.Debug.WriteLine("Navigation System: Initial navigation to HomePage completed");
-        }
-
-        /// <summary>
-        /// 🔄 SUSPENSION & RESUME: Handle navigation with suspension state parameter
-        /// 📊 Processes launch information and suspension state from App.xaml.cs
-        /// 🎯 Enables welcome message display based on app lifecycle events
-        /// </summary>
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-
-            try
-            {
-                // 🔄 SUSPENSION & RESUME: Check if we have suspension state information
-                if (e.Parameter != null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME: MainPage received parameter: {e.Parameter}");
-                    
-                    // 🔄 SUSPENSION & RESUME: Process launch information if available
-                    var launchInfo = e.Parameter.ToString();
-                    LaunchInformation = launchInfo;
-                    
-                    // 🔄 SUSPENSION & RESUME: Log the launch information
-                    System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME: Launch information: {LaunchInformation}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"🔄 SUSPENSION & RESUME ERROR: Failed to process navigation parameter - {ex.Message}");
-            }
         }
 
         /// <summary>
@@ -265,71 +235,119 @@ namespace UWP_Demo
         }
 
         /// <summary>
-        /// Navigation System: Update NavigationView selection based on current frame content
-        /// Navigation System: Keeps NavigationView synchronized with actual page state
+        /// Handle navigation view item selection
+        /// </summary>
+        private void MainNavigationView_SelectionChanged(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs args)
+        {
+            try
+            {
+                if (args.SelectedItem is Microsoft.UI.Xaml.Controls.NavigationViewItem item)
+                {
+                    string tag = item.Tag?.ToString();
+                    if (!string.IsNullOrEmpty(tag) && _pageTypeMap.ContainsKey(tag))
+                    {
+                        ContentFrame.Navigate(_pageTypeMap[tag]);
+                        UpdatePageTitle(tag);
+                        UpdateBreadcrumb();
+                    }
+                }
+                else if (args.SelectedItem == sender.SettingsItem)
+                {
+                    ContentFrame.Navigate(typeof(SettingsPage));
+                    UpdatePageTitle("settings");
+                    UpdateBreadcrumb();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Handle back requested navigation
+        /// </summary>
+        private void MainNavigationView_BackRequested(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewBackRequestedEventArgs args)
+        {
+            if (ContentFrame.CanGoBack)
+            {
+                ContentFrame.GoBack();
+                UpdateNavigationFromFrame();
+            }
+        }
+
+        /// <summary>
+        /// Update page title based on current selection
+        /// </summary>
+        private void UpdatePageTitle(string tag)
+        {
+            if (_pageTitleMap.ContainsKey(tag))
+            {
+                CurrentPageTitle = _pageTitleMap[tag];
+            }
+            else if (tag == "settings")
+            {
+                CurrentPageTitle = "Settings";
+            }
+            else
+            {
+                CurrentPageTitle = "Customer Manager";
+            }
+        }
+
+        /// <summary>
+        /// Update navigation selection based on current frame content
         /// </summary>
         private void UpdateNavigationFromFrame()
         {
             try
             {
-                var currentPageType = ContentFrame.CurrentSourcePageType;
-                if (currentPageType == null) return;
-
-                // Navigation System: Find corresponding navigation item
-                string pageTag = null;
-                
-                if (currentPageType == typeof(SettingsPage))
+                if (ContentFrame.Content != null)
                 {
-                    // Navigation System: Handle settings specially
-                    MainNavigationView.SelectedItem = MainNavigationView.SettingsItem;
-                    CurrentPageTitle = "Settings";
-                    BreadcrumbText.Text = "Home > Settings";
-                    return;
-                }
-                else
-                {
-                    // Navigation System: Find by page type
+                    var currentPageType = ContentFrame.Content.GetType();
+                    
                     foreach (var kvp in _pageTypeMap)
                     {
                         if (kvp.Value == currentPageType)
                         {
-                            pageTag = kvp.Key;
-                            break;
+                            var navItem = FindNavigationItemByTag(kvp.Key);
+                            if (navItem != null)
+                            {
+                                MainNavigationView.SelectedItem = navItem;
+                                UpdatePageTitle(kvp.Key);
+                                UpdateBreadcrumb();
+                                return;
+                            }
                         }
                     }
-                }
-
-                // Navigation System: Update selected item
-                if (!string.IsNullOrEmpty(pageTag))
-                {
-                    var navItem = FindNavigationItemByTag(pageTag);
-                    if (navItem != null)
+                    
+                    if (currentPageType == typeof(SettingsPage))
                     {
-                        MainNavigationView.SelectedItem = navItem;
-                        CurrentPageTitle = _pageTitleMap.GetValueOrDefault(pageTag, "Customer Management");
+                        MainNavigationView.SelectedItem = MainNavigationView.SettingsItem;
+                        UpdatePageTitle("settings");
+                        UpdateBreadcrumb();
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to update navigation from frame - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to update navigation from frame - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Find NavigationViewItem by tag
-        /// Navigation System: Searches both menu items and footer items
+        /// Find NavigationViewItem by tag, searching both menu items and footer items
         /// </summary>
         private Microsoft.UI.Xaml.Controls.NavigationViewItem FindNavigationItemByTag(string tag)
         {
-            // Navigation System: Search menu items
+            // Search menu items
             foreach (var item in MainNavigationView.MenuItems)
             {
                 if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && navItem.Tag?.ToString() == tag)
                     return navItem;
             }
 
-            // Navigation System: Search footer items
+            // Search footer items
             foreach (var item in MainNavigationView.FooterMenuItems)
             {
                 if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && navItem.Tag?.ToString() == tag)
@@ -340,14 +358,12 @@ namespace UWP_Demo
         }
 
         /// <summary>
-        /// Navigation System: Update breadcrumb navigation
-        /// Navigation System: Shows current navigation path to user
+        /// Update breadcrumb navigation showing current path
         /// </summary>
         private void UpdateBreadcrumb()
         {
             try
             {
-                // Navigation System: Find current page tag
                 string currentTag = null;
                 var selectedItem = MainNavigationView.SelectedItem as Microsoft.UI.Xaml.Controls.NavigationViewItem;
                 
@@ -360,7 +376,6 @@ namespace UWP_Demo
                     currentTag = "settings";
                 }
 
-                // Navigation System: Update breadcrumb
                 if (!string.IsNullOrEmpty(currentTag) && _breadcrumbMap.ContainsKey(currentTag))
                 {
                     BreadcrumbText.Text = _breadcrumbMap[currentTag];
@@ -372,15 +387,14 @@ namespace UWP_Demo
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Failed to update breadcrumb - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to update breadcrumb - {ex.Message}");
             }
         }
 
         #region Header Action Handlers
 
         /// <summary>
-        /// Navigation System: Handle search button click
-        /// Navigation System: Opens search functionality
+        /// Handle search button click
         /// </summary>
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
@@ -398,13 +412,12 @@ namespace UWP_Demo
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Search error - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Search error - {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Navigation System: Handle notifications button click
-        /// Navigation System: Shows notifications panel
+        /// Handle notifications button click
         /// </summary>
         private async void NotificationsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -422,7 +435,7 @@ namespace UWP_Demo
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation System ERROR: Notifications error - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Notifications error - {ex.Message}");
             }
         }
 
